@@ -9,9 +9,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:desktop": "vite build --config vite.desktop.config.ts",
-    "package:linux": "bun run build:desktop && electron-packager . Vertice --platform=linux --arch=x64 --out=electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/electron-release --ignore=^/.output",
-    "package:windows": "bun run build:desktop && electron-packager . Vertice --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/electron-release --ignore=^/.output",
-    "package:mac": "bun run build:desktop && electron-packager . Vertice --platform=darwin --arch=x64 --out=electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/electron-release --ignore=^/.output",
+    "package:linux": "bun run build:desktop && electron-packager . Vertice --platform=linux --arch=x64 --out=/tmp/vertice-electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/dist-desktop --ignore=^/.output",
+    "package:windows": "bun run build:desktop && electron-packager . Vertice --platform=win32 --arch=x64 --out=/tmp/vertice-electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/dist-desktop --ignore=^/.output",
+    "package:mac": "bun run build:desktop && electron-packager . Vertice --platform=darwin --arch=x64 --out=/tmp/vertice-electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/dist-desktop --ignore=^/.output",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
