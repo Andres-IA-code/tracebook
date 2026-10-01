@@ -12,3 +12,4 @@
 ## Project architecture
 
 - Keep Vértice as a client-side root-route workspace with no fabricated records; user-entered operational data persists locally in the browser so the workspace remains functional without backend setup.
+- Keep the desktop build as a separate static Vite entry consumed by Electron, so the web SSR build and installed app share the same workspace component without changing deployment behavior.
