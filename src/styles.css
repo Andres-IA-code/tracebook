@@ -368,3 +368,28 @@ dl { margin: 0; }
 @media (max-width: 420px) {
   .metric-grid { grid-template-columns: 1fr; }.stepper { grid-template-columns: 1fr; }.stepper > div { border-left: 0; border-top: 1px solid var(--border); }.stepper > div:first-child { border-top: 0; }.detail-fields { grid-template-columns: 1fr; }.evidence { grid-template-columns: 1fr; }.doc-brand em { display: none; }
 }
+.empty-state { min-height: 300px; padding: 48px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.empty-state > span { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 8px; background: var(--muted); color: var(--primary); }
+.empty-state svg { width: 23px; }
+.empty-state h3 { margin: 16px 0 6px; font-size: 16px; }
+.empty-state p { max-width: 390px; margin: 0 0 18px; color: var(--muted-foreground); font-size: 14px; }
+.simple-records { display: flex; flex-direction: column; }
+.simple-records > div { min-height: 68px; padding: 12px 20px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border); }
+.simple-records > div:last-child { border-bottom: 0; }
+.simple-records > div > span { display: flex; flex-direction: column; gap: 3px; }
+.simple-records > div > span:nth-child(2) { flex: 1; }
+.simple-records small { color: var(--muted-foreground); }
+.record-avatar { width: 36px; height: 36px; flex: none !important; align-items: center; justify-content: center; border-radius: 7px; background: var(--muted); color: var(--primary); font-size: 12px; font-weight: 600; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 80; padding: 24px; display: grid; place-items: center; background: color-mix(in oklab, var(--foreground) 42%, transparent); }
+.modal { width: min(100%, 560px); max-height: calc(100vh - 48px); overflow: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--card); box-shadow: 0 20px 60px color-mix(in oklab, var(--foreground) 24%, transparent); }
+.modal-head { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+.modal-head small { color: var(--muted-foreground); }
+.modal-head h2 { margin: 3px 0 0; font-size: 19px; }
+.modal form { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-field { display: flex; flex-direction: column; gap: 6px; color: var(--muted-foreground); font-size: 12px; font-weight: 500; }
+.form-field input, .form-field select, .form-field textarea { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid var(--input); border-radius: 7px; outline: 0; background: var(--background); color: var(--foreground); font-size: 14px; font-weight: 400; }
+.form-field textarea { resize: vertical; }
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 18%, transparent); }
+.modal-actions { padding-top: 4px; display: flex; justify-content: flex-end; gap: 10px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .modal-backdrop { padding: 12px; } .simple-records > div { align-items: flex-start; flex-wrap: wrap; } }
