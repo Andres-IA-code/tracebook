@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   LockKeyhole,
   Menu,
+  Moon,
   MoreHorizontal,
   Network,
   Plus,
@@ -24,6 +25,7 @@ import {
   Send,
   Settings,
   ShieldCheck,
+  Sun,
   Upload,
   UserPlus,
   X,
@@ -119,12 +121,25 @@ export function VerticeApp() {
   const [view, setView] = useState<View>("panel");
   const [mobileNav, setMobileNav] = useState(false);
   const [notice, setNotice] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("vertice-theme");
+    setDarkMode(savedTheme ? savedTheme === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    window.localStorage.setItem("vertice-theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
   const go = (next: View) => { setView(next); setMobileNav(false); setNotice(""); };
   const confirm = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 2600); };
 
-  if (view === "firma") return <SignatureView onBack={() => go("autorizaciones")} confirm={confirm} notice={notice} />;
-  if (view === "portal") return <PortalView onBack={() => go("clientes")} confirm={confirm} notice={notice} />;
+  const themeButton = <Button variant="ghost" size="icon" aria-label={darkMode ? "Activar modo claro" : "Activar modo oscuro"} title={darkMode ? "Modo claro" : "Modo oscuro"} onClick={() => setDarkMode(current => !current)}>{darkMode ? <Sun /> : <Moon />}</Button>;
+
+  if (view === "firma") return <SignatureView onBack={() => go("autorizaciones")} confirm={confirm} notice={notice} themeButton={themeButton} />;
+  if (view === "portal") return <PortalView onBack={() => go("clientes")} confirm={confirm} notice={notice} themeButton={themeButton} />;
 
   return (
     <div className="app-shell">
@@ -138,11 +153,11 @@ export function VerticeApp() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-foot"><button className="nav-item"><Settings /><span>Configuración</span></button><div className="profile"><span>AR</span><div><b>Andrea Ríos</b><small>Responsable</small></div></div></div>
+        <div className="sidebar-foot"><button className="nav-item"><Settings /><span>Configuración</span></button><button className="nav-item" onClick={() => setDarkMode(current => !current)}>{darkMode ? <Sun /> : <Moon />}<span>{darkMode ? "Modo claro" : "Modo oscuro"}</span></button><div className="profile"><span>AR</span><div><b>Andrea Ríos</b><small>Responsable</small></div></div></div>
       </aside>
       {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
       <div className="workspace">
-        <div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div><span className="profile-dot">AR</span></div>
+        <div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div><div className="mobile-actions">{themeButton}<span className="profile-dot">AR</span></div></div>
         <main className="page">
           {view === "panel" && <Dashboard go={go} confirm={confirm} />}
           {view === "proyectos" && <Projects go={go} confirm={confirm} />}
