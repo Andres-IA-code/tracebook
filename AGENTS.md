@@ -11,4 +11,4 @@
 
 ## Project architecture
 
-- Keep the Vértice demo as a client-side workspace in the root route; it intentionally uses in-memory sample data so every imported screen is immediately explorable without backend setup.
+- Keep Vértice as a client-side root-route workspace with no fabricated records; user-entered operational data persists locally in the browser so the workspace remains functional without backend setup.
