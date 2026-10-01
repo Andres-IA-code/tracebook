@@ -27,6 +27,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-heading-foreground: var(--heading-foreground);
   --color-critical: var(--critical);
   --color-critical-foreground: var(--critical-foreground);
   --color-critical-soft: var(--critical-soft);
@@ -44,6 +45,7 @@
   --radius: 0.5rem;
   --background: oklch(0.97614 0 0);
   --foreground: oklch(0.19125 0 0);
+  --heading-foreground: oklch(0.145 0 0);
   --card: oklch(0.97614 0 0);
   --card-foreground: oklch(0.19125 0 0);
   --popover: oklch(0.97614 0 0);
@@ -76,6 +78,7 @@
   color-scheme: dark;
   --background: oklch(0.19125 0 0);
   --foreground: oklch(0.97614 0 0);
+  --heading-foreground: oklch(0.97614 0 0);
   --card: oklch(0.235 0.006 105);
   --card-foreground: oklch(0.97614 0 0);
   --popover: oklch(0.235 0.006 105);
@@ -109,16 +112,24 @@ body { margin: 0; background: var(--background); color: var(--foreground); font-
 button, input { font: inherit; }
 button { letter-spacing: 0; }
 
-/* Keep every visible heading anchored to the high-contrast text token. */
-.page-head h1,
-.section-head h2,
-.detail-head h2,
-.empty-state h3,
-.modal-head h2,
-.signature-head h1,
-.kanban h2,
-.kanban h3,
-.setting-row b { color: var(--foreground); }
+/* Keep every title anchored to a dedicated high-contrast token in both themes. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.metric strong,
+.section-head,
+.detail-head,
+.empty-state,
+.modal-head,
+.signature-head,
+.kanban,
+.setting-row b {
+  color: var(--heading-foreground);
+  -webkit-text-fill-color: var(--heading-foreground);
+}
 
 .app-shell { min-height: 100vh; display: flex; }
 .sidebar { position: fixed; inset: 0 auto 0 0; width: 232px; z-index: 30; background: var(--card); border-right: 1px solid var(--border); padding: 20px 14px; display: flex; flex-direction: column; gap: 24px; }
