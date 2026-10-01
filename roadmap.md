@@ -8,3 +8,4 @@
 
 - [x] Remove all sample records and reset dashboard counters
 - [x] Add working forms and JSON import for real user data
+- [x] Make workspace settings editable and persistent
