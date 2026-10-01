@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
   LayoutDashboard, Menu, Moon, Plus, Search, Settings, ShieldCheck, Sun, Upload, X,
@@ -7,16 +7,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type View = "panel" | "proyectos" | "autorizaciones" | "hallazgos" | "biblioteca" | "informes" | "clientes";
+type View = "panel" | "proyectos" | "autorizaciones" | "hallazgos" | "biblioteca" | "informes" | "clientes" | "configuracion";
 type Project = { id: string; name: string; client: string; type: string; status: string; start: string; end: string };
 type Finding = { id: string; title: string; severity: string; status: string; project: string; description: string };
 type Client = { id: string; name: string; industry: string; contact: string; email: string };
 type Template = { id: string; title: string; cwe: string; category: string; severity: string };
 type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; templates: Template[] };
+type SettingsState = { organization: string; userName: string; email: string; role: string; timezone: string; emailAlerts: boolean; reportAlerts: boolean };
 type CreateKind = "project" | "finding" | "client" | "template" | null;
 
 const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [] };
 const STORAGE_KEY = "vertice-workspace-data";
+const SETTINGS_KEY = "vertice-settings";
+const DEFAULT_SETTINGS: SettingsState = { organization: "", userName: "", email: "", role: "Responsable", timezone: "America/Argentina/Buenos_Aires", emailAlerts: true, reportAlerts: true };
 
 const navItems = [
   ["panel", "Panel", LayoutDashboard], ["proyectos", "Proyectos", FolderOpen],
@@ -49,6 +52,7 @@ export function VerticeApp() {
   const [notice, setNotice] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const [data, setData] = useState<DataState>(EMPTY_DATA);
+  const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [createKind, setCreateKind] = useState<CreateKind>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -62,6 +66,11 @@ export function VerticeApp() {
         setData({ projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [] });
       } catch { window.localStorage.removeItem(STORAGE_KEY); }
     }
+    const savedSettings = window.localStorage.getItem(SETTINGS_KEY);
+    if (savedSettings) {
+      try { setSettings({ ...DEFAULT_SETTINGS, ...(JSON.parse(savedSettings) as Partial<SettingsState>) }); }
+      catch { window.localStorage.removeItem(SETTINGS_KEY); }
+    }
   }, []);
 
   useEffect(() => {
@@ -70,6 +79,7 @@ export function VerticeApp() {
   }, [darkMode]);
 
   const updateData = (next: DataState) => { setData(next); window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); };
+  const updateSettings = (next: SettingsState) => { setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); confirm("Configuración guardada"); };
   const confirm = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 2600); };
   const go = (next: View) => { setView(next); setMobileNav(false); };
   const addItem = (kind: Exclude<CreateKind, null>, item: Project | Finding | Client | Template) => {
@@ -97,9 +107,9 @@ export function VerticeApp() {
   return <div className="app-shell">
     <aside className={cn("sidebar", mobileNav && "sidebar-open")}>
       <div className="brand"><span className="brand-mark" />Vértice<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
-      <button className="org-switcher"><span className="org-avatar">VC</span><span><b>Mi consultora</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
+      <button className="org-switcher" onClick={() => go("configuracion")}><span className="org-avatar">{initials(settings.organization || "Vértice")}</span><span><b>{settings.organization || "Mi consultora"}</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
       <nav aria-label="Navegación principal">{navItems.map(([key,label,Icon]) => <button key={key} className={cn("nav-item", view === key && "active")} onClick={() => go(key)}><Icon /><span>{label}</span></button>)}</nav>
-      <div className="sidebar-foot"><button className="nav-item"><Settings /><span>Configuración</span></button><button className="nav-item" onClick={() => setDarkMode(current => !current)}>{darkMode ? <Sun /> : <Moon />}<span>{darkMode ? "Modo claro" : "Modo oscuro"}</span></button><div className="profile"><span>US</span><div><b>Usuario</b><small>Responsable</small></div></div></div>
+      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button><button className="nav-item" onClick={() => setDarkMode(current => !current)}>{darkMode ? <Sun /> : <Moon />}<span>{darkMode ? "Modo claro" : "Modo oscuro"}</span></button><div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
     </aside>
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div><div className="mobile-actions">{themeButton}</div></div>
@@ -111,11 +121,16 @@ export function VerticeApp() {
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} />}
+        {view === "configuracion" && <SettingsPage settings={settings} darkMode={darkMode} onThemeChange={setDarkMode} onSave={updateSettings} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
     {notice ? <div className="toast"><Check />{notice}</div> : null}
   </div>;
+}
+
+function initials(value: string) {
+  return value.trim().split(/\s+/).slice(0, 2).map(part => part[0]?.toUpperCase() ?? "").join("") || "—";
 }
 
 function Dashboard({ data, counts, go, create, importRef, importData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; importRef: React.RefObject<HTMLInputElement | null>; importData: (file?: File) => void }) {
@@ -156,6 +171,25 @@ function Clients({ clients, create }: { clients: Client[]; create: () => void })
   return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section></>;
 }
 
+function SettingsPage({ settings, darkMode, onThemeChange, onSave }: { settings: SettingsState; darkMode: boolean; onThemeChange: (value: boolean) => void; onSave: (settings: SettingsState) => void }) {
+  const [draft, setDraft] = useState(settings);
+  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(draft); };
+  const set = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => setDraft(current => ({ ...current, [key]: value }));
+  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo" />
+    <form className="settings-layout" onSubmit={submit}>
+      <div className="stack">
+        <Section title="Consultora" className="settings-section"><Field label="Nombre de la consultora" name="organization" value={draft.organization} required onChange={value => set("organization", value)} /><p className="field-help">Este nombre se muestra en la navegación y en los informes.</p></Section>
+        <Section title="Perfil" className="settings-section"><div className="form-grid"><Field label="Nombre completo" name="userName" value={draft.userName} required onChange={value => set("userName", value)} /><Field label="Correo electrónico" name="email" type="email" value={draft.email} required onChange={value => set("email", value)} /><SelectField label="Rol" name="role" options={["Responsable","Pentester","Revisor"]} value={draft.role} onChange={value => set("role", value)} /><SelectField label="Zona horaria" name="timezone" options={["America/Argentina/Buenos_Aires","America/Bogota","America/Santiago","America/Mexico_City","Europe/Madrid"]} value={draft.timezone} onChange={value => set("timezone", value)} /></div></Section>
+      </div>
+      <div className="stack">
+        <Section title="Apariencia" className="settings-section"><div className="setting-row"><span><b>Modo oscuro</b><small>Usa una interfaz oscura en este dispositivo.</small></span><label className="switch"><input type="checkbox" checked={darkMode} onChange={event => onThemeChange(event.target.checked)} /><i /></label></div></Section>
+        <Section title="Notificaciones" className="settings-section"><div className="setting-row"><span><b>Alertas por correo</b><small>Recibe avisos sobre autorizaciones y hallazgos.</small></span><label className="switch"><input type="checkbox" checked={draft.emailAlerts} onChange={event => set("emailAlerts", event.target.checked)} /><i /></label></div><div className="setting-row"><span><b>Informes listos</b><small>Recibe un aviso cuando un informe esté disponible.</small></span><label className="switch"><input type="checkbox" checked={draft.reportAlerts} onChange={event => set("reportAlerts", event.target.checked)} /><i /></label></div></Section>
+        <Button type="submit" size="lg"><Check />Guardar configuración</Button>
+      </div>
+    </form>
+  </>;
+}
+
 function CreateDialog({ kind, projects, onClose, onSave }: { kind: Exclude<CreateKind,null>; projects: Project[]; onClose: () => void; onSave: (kind: Exclude<CreateKind,null>, item: Project | Finding | Client | Template) => void }) {
   const labels = { project: "Nuevo proyecto", finding: "Nuevo hallazgo", client: "Nuevo cliente", template: "Nueva plantilla" };
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -173,5 +207,5 @@ function CreateDialog({ kind, projects, onClose, onSave }: { kind: Exclude<Creat
     <div className="modal-actions"><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button><Button type="submit">Guardar datos</Button></div>
   </form></section></div>;
 }
-function Field({label,name,type="text",required,placeholder}:{label:string;name:string;type?:string;required?:boolean;placeholder?:string}) { return <label className="form-field">{label}<input name={name} type={type} required={required} placeholder={placeholder}/></label>; }
-function SelectField({label,name,options,empty}:{label:string;name:string;options:string[];empty?:string}) { return <label className="form-field">{label}<select name={name}>{empty ? <option value="">{empty}</option> : null}{options.map(option=><option key={option}>{option}</option>)}</select></label>; }
+function Field({label,name,type="text",required,placeholder,value,onChange}:{label:string;name:string;type?:string;required?:boolean;placeholder?:string;value?:string;onChange?:(value:string)=>void}) { return <label className="form-field">{label}<input name={name} type={type} required={required} placeholder={placeholder} value={value} onChange={onChange ? event => onChange(event.target.value) : undefined}/></label>; }
+function SelectField({label,name,options,empty,value,onChange}:{label:string;name:string;options:string[];empty?:string;value?:string;onChange?:(value:string)=>void}) { return <label className="form-field">{label}<select name={name} value={value} onChange={onChange ? event => onChange(event.target.value) : undefined}>{empty ? <option value="">{empty}</option> : null}{options.map(option=><option key={option}>{option}</option>)}</select></label>; }
