@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
-  LayoutDashboard, Menu, Moon, Plus, Search, Settings, ShieldCheck, Sun, Upload, X,
+  LayoutDashboard, Menu, Plus, Search, Settings, ShieldCheck, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -50,15 +50,13 @@ export function VerticeApp() {
   const [view, setView] = useState<View>("panel");
   const [mobileNav, setMobileNav] = useState(false);
   const [notice, setNotice] = useState("");
-  const [darkMode, setDarkMode] = useState(false);
   const [data, setData] = useState<DataState>(EMPTY_DATA);
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [createKind, setCreateKind] = useState<CreateKind>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("vertice-theme");
-    setDarkMode(savedTheme ? savedTheme === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches);
+    window.localStorage.removeItem("vertice-theme");
     const savedData = window.localStorage.getItem(STORAGE_KEY);
     if (savedData) {
       try {
@@ -72,11 +70,6 @@ export function VerticeApp() {
       catch { window.localStorage.removeItem(SETTINGS_KEY); }
     }
   }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-    window.localStorage.setItem("vertice-theme", darkMode ? "dark" : "light");
-  }, [darkMode]);
 
   const updateData = (next: DataState) => { setData(next); window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); };
   const updateSettings = (next: SettingsState) => { setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); confirm("Configuración guardada"); };
@@ -102,17 +95,15 @@ export function VerticeApp() {
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
   const critical = data.findings.filter(finding => finding.severity === "Crítico" && finding.status !== "Cerrado").length;
   const pendingReports = data.projects.filter(project => project.status === "En revisión").length;
-  const themeButton = <Button variant="ghost" size="icon" aria-label={darkMode ? "Activar modo claro" : "Activar modo oscuro"} onClick={() => setDarkMode(current => !current)}>{darkMode ? <Sun /> : <Moon />}</Button>;
-
   return <div className="app-shell">
     <aside className={cn("sidebar", mobileNav && "sidebar-open")}>
       <div className="brand"><span className="brand-mark" />Vértice<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
       <button className="org-switcher" onClick={() => go("configuracion")}><span className="org-avatar">{initials(settings.organization || "Vértice")}</span><span><b>{settings.organization || "Mi consultora"}</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
       <nav aria-label="Navegación principal">{navItems.map(([key,label,Icon]) => <button key={key} className={cn("nav-item", view === key && "active")} onClick={() => go(key)}><Icon /><span>{label}</span></button>)}</nav>
-      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button><button className="nav-item" onClick={() => setDarkMode(current => !current)}>{darkMode ? <Sun /> : <Moon />}<span>{darkMode ? "Modo claro" : "Modo oscuro"}</span></button><div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
+      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button><div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
     </aside>
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
-    <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div><div className="mobile-actions">{themeButton}</div></div>
+    <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div></div>
       <main className="page">
         {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} />}
@@ -121,7 +112,7 @@ export function VerticeApp() {
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} />}
-        {view === "configuracion" && <SettingsPage settings={settings} darkMode={darkMode} onThemeChange={setDarkMode} onSave={updateSettings} />}
+        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
@@ -171,7 +162,7 @@ function Clients({ clients, create }: { clients: Client[]; create: () => void })
   return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section></>;
 }
 
-function SettingsPage({ settings, darkMode, onThemeChange, onSave }: { settings: SettingsState; darkMode: boolean; onThemeChange: (value: boolean) => void; onSave: (settings: SettingsState) => void }) {
+function SettingsPage({ settings, onSave }: { settings: SettingsState; onSave: (settings: SettingsState) => void }) {
   const [draft, setDraft] = useState(settings);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(draft); };
   const set = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => setDraft(current => ({ ...current, [key]: value }));
@@ -182,7 +173,6 @@ function SettingsPage({ settings, darkMode, onThemeChange, onSave }: { settings:
         <Section title="Perfil" className="settings-section"><div className="form-grid"><Field label="Nombre completo" name="userName" value={draft.userName} required onChange={value => set("userName", value)} /><Field label="Correo electrónico" name="email" type="email" value={draft.email} required onChange={value => set("email", value)} /><SelectField label="Rol" name="role" options={["Responsable","Pentester","Revisor"]} value={draft.role} onChange={value => set("role", value)} /><SelectField label="Zona horaria" name="timezone" options={["America/Argentina/Buenos_Aires","America/Bogota","America/Santiago","America/Mexico_City","Europe/Madrid"]} value={draft.timezone} onChange={value => set("timezone", value)} /></div></Section>
       </div>
       <div className="stack">
-        <Section title="Apariencia" className="settings-section"><div className="setting-row"><span><b>Modo oscuro</b><small>Usa una interfaz oscura en este dispositivo.</small></span><label className="switch"><input type="checkbox" checked={darkMode} onChange={event => onThemeChange(event.target.checked)} /><i /></label></div></Section>
         <Section title="Notificaciones" className="settings-section"><div className="setting-row"><span><b>Alertas por correo</b><small>Recibe avisos sobre autorizaciones y hallazgos.</small></span><label className="switch"><input type="checkbox" checked={draft.emailAlerts} onChange={event => set("emailAlerts", event.target.checked)} /><i /></label></div><div className="setting-row"><span><b>Informes listos</b><small>Recibe un aviso cuando un informe esté disponible.</small></span><label className="switch"><input type="checkbox" checked={draft.reportAlerts} onChange={event => set("reportAlerts", event.target.checked)} /><i /></label></div></Section>
         <Button type="submit" size="lg"><Check />Guardar configuración</Button>
       </div>
