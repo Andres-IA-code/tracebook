@@ -11,3 +11,4 @@
 - [x] Make workspace settings editable and persistent
 - [x] Add browser installation metadata and branded app icons
 - [x] Add downloadable desktop packages for Windows, macOS, and Linux
+- [x] Optimize desktop startup and regenerate the three download packages

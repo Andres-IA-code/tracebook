@@ -1,6 +1,13 @@
 const { app, BrowserWindow, shell } = require("electron");
 const path = require("node:path");
 
+// Vértice is fully local: skip Chromium services that otherwise run during startup.
+app.commandLine.appendSwitch("disable-background-networking");
+app.commandLine.appendSwitch("disable-component-update");
+app.commandLine.appendSwitch("disable-default-apps");
+app.commandLine.appendSwitch("disable-domain-reliability");
+app.commandLine.appendSwitch("disable-features", "MediaRouter,OptimizationHints,Translate");
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
@@ -8,6 +15,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 640,
     backgroundColor: "#141414",
+    show: true,
     icon: path.join(__dirname, "..", "public", "icons", "icon-512.png"),
     webPreferences: {
       contextIsolation: true,
@@ -16,7 +24,7 @@ function createWindow() {
   });
 
   win.removeMenu();
-  win.loadFile(path.join(__dirname, "..", "dist-desktop", "index.html"));
+  void win.loadFile(path.join(__dirname, "..", "dist-desktop", "index.html"));
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) void shell.openExternal(url);
     return { action: "deny" };
