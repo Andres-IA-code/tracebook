@@ -9,3 +9,5 @@
 - [x] Remove all sample records and reset dashboard counters
 - [x] Add working forms and JSON import for real user data
 - [x] Make workspace settings editable and persistent
+- [x] Add browser installation metadata and branded app icons
+- [x] Add downloadable desktop packages for Windows, macOS, and Linux

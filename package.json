@@ -1,12 +1,17 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "vertice-pentest",
   "private": true,
+  "main": "electron/main.cjs",
   "sideEffects": false,
   "type": "module",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:desktop": "vite build --config vite.desktop.config.ts",
+    "package:linux": "bun run build:desktop && electron-packager . Vertice --platform=linux --arch=x64 --out=/tmp/vertice-electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/dist-desktop --ignore=^/.output",
+    "package:windows": "bun run build:desktop && electron-packager . Vertice --platform=win32 --arch=x64 --out=/tmp/vertice-electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/dist-desktop --ignore=^/.output",
+    "package:mac": "bun run build:desktop && electron-packager . Vertice --platform=darwin --arch=x64 --out=/tmp/vertice-electron-release --overwrite --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/dist-desktop --ignore=^/.output",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -85,6 +90,8 @@
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
+    "electron": "^38.2.0",
+    "@electron/packager": "^18.3.6",
     "vite": "8.1.5"
   }
 }
