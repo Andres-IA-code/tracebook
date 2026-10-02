@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, Download, X,
+  LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,6 @@ const DEFAULT_SETTINGS: SettingsState = {
 
 type AuditEntry = { id: string; at: string; user: string; action: "Importación" | "Exportación" | "Eliminación"; detail: string };
 const AUDIT_KEY = "vertice-audit";
-type Backup = { data: DataState; settings?: Partial<SettingsState> | undefined };
 function normalizeData(parsed: Partial<DataState>): DataState {
   const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] };
   if (![next.projects, next.findings, next.clients, next.templates, next.authorizations].every(Array.isArray)) throw new Error("formato");
@@ -45,7 +44,6 @@ function normalizeData(parsed: Partial<DataState>): DataState {
   });
   return next;
 }
-function mergeById<T extends { id: string }>(a: T[], b: T[]) { const ids = new Set(a.map(x => x.id)); return [...a, ...b.filter(x => !ids.has(x.id))]; }
 function exportBackup(data: DataState, settings: SettingsState) {
   const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: "Vértice" }, null, 2);
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
@@ -85,8 +83,6 @@ export function VerticeApp() {
   const [data, setData] = useState<DataState>(EMPTY_DATA);
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [createKind, setCreateKind] = useState<CreateKind>(null);
-  const importRef = useRef<HTMLInputElement>(null);
-  const [pendingImport, setPendingImport] = useState<Backup | null>(null);
   const [pendingReset, setPendingReset] = useState(false);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   useEffect(() => { try { const a = JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]"); if (Array.isArray(a)) setAudit(a); } catch { /* ignore */ } }, []);
@@ -139,28 +135,6 @@ export function VerticeApp() {
     setCreateKind(null);
     confirm("Datos guardados correctamente");
   };
-  const importData = async (file?: File) => {
-    if (!file) return;
-    try {
-      const parsed = JSON.parse(await file.text()) as Partial<DataState> & { settings?: Partial<SettingsState> };
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
-      const backup: Backup = { data: normalizeData(parsed), settings: parsed.settings && typeof parsed.settings === "object" ? parsed.settings : undefined };
-      const hasData = Object.values(data).some(list => list.length > 0);
-      if (hasData) setPendingImport(backup); else applyImport(backup, "replace");
-    } catch { confirm("El archivo no tiene un formato válido"); }
-    if (importRef.current) importRef.current.value = "";
-  };
-  const applyImport = (backup: Backup, mode: "merge" | "replace") => {
-    if (mode === "replace") {
-      updateData(backup.data);
-      if (backup.settings) { const s = { ...DEFAULT_SETTINGS, ...backup.settings }; setSettings(s); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
-    } else {
-      updateData(normalizeData({ projects: mergeById(data.projects, backup.data.projects), findings: mergeById(data.findings, backup.data.findings), clients: mergeById(data.clients, backup.data.clients), templates: mergeById(data.templates, backup.data.templates), authorizations: mergeById(data.authorizations ?? [], backup.data.authorizations) }));
-    }
-    const b = backup.data;
-    log("Importación", `${mode === "replace" ? "Reemplazar todo" : "Combinar"}: ${b.projects.length} proyectos, ${b.findings.length} hallazgos, ${b.clients.length} clientes, ${b.templates.length} plantillas, ${b.authorizations.length} autorizaciones`);
-    setPendingImport(null); confirm("Datos importados correctamente");
-  };
   const deleteProject = (id: string) => {
     const p = data.projects.find(x => x.id === id); if (!p) return;
     const nf = data.findings.filter(f => f.projectId === id).length;
@@ -199,23 +173,15 @@ export function VerticeApp() {
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); if (t) log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
-        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} importRef={importRef} importData={importData} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
+        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
-    {pendingImport ? <div className="modal-backdrop" role="presentation"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
-      <div className="modal-head"><div><small>Importar datos</small><h2 id="import-title">Ya tenés datos cargados</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingImport(null)}><X /></Button></div>
-      <form onSubmit={e => e.preventDefault()}>
-        <p>El archivo contiene {pendingImport.data.projects.length} proyectos, {pendingImport.data.findings.length} hallazgos, {pendingImport.data.clients.length} clientes, {pendingImport.data.templates.length} plantillas y {pendingImport.data.authorizations.length} autorizaciones. ¿Cómo querés importarlo?</p>
-        <p><b>Combinar:</b> añade los registros nuevos y no duplica los que tienen el mismo identificador.</p>
-        <p><b>Reemplazar todo:</b> <AlertTriangle style={{display:"inline",width:14,height:14}} /> se perderán todos los datos actuales{pendingImport.settings ? " y se restaurará la configuración del respaldo" : ""}.</p>
-        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingImport(null)}>Cancelar</Button><Button type="button" variant="outline" onClick={() => { if (window.confirm("Se perderán todos los datos actuales. ¿Continuar?")) applyImport(pendingImport, "replace"); }}>Reemplazar todo</Button><Button type="button" onClick={() => applyImport(pendingImport, "merge")}>Combinar</Button></div>
-      </form></section></div> : null}
     {pendingAuditDelete ? (() => { const entry = pendingAuditDelete === "all" ? null : audit.find(e => e.id === pendingAuditDelete); return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingAuditDelete(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="audit-title">
       <div className="modal-head"><div><small>Registro de auditoría</small><h2 id="audit-title">{pendingAuditDelete === "all" ? "Borrar todo el registro" : "Eliminar registro"}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingAuditDelete(null)}><X /></Button></div>
       <form onSubmit={event => { event.preventDefault(); applyAuditDelete(); }}>
         {pendingAuditDelete === "all"
-          ? <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrarán los {audit.length} registro(s) del historial de auditoría: importaciones, exportaciones y eliminaciones registradas hasta ahora.</p>
+          ? <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrarán los {audit.length} registro(s) del historial de auditoría: exportaciones y eliminaciones registradas hasta ahora.</p>
           : <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se eliminará este registro: <b>{entry ? `${entry.action} — ${entry.detail}` : "registro seleccionado"}</b>.</p>}
         <p>Esta acción no se puede deshacer y no queda registrada en el historial.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingAuditDelete(null)}>Cancelar</Button><Button type="submit"><Trash2 />{pendingAuditDelete === "all" ? "Borrar todo" : "Eliminar"}</Button></div>
@@ -414,7 +380,7 @@ function Clients({ clients, create, onDelete }: { clients: Client[]; create: () 
   return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span><span><button className="icon-danger" aria-label={`Eliminar ${client.name}`} title="Eliminar cliente" onClick={() => del(client)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section></>;
 }
 
-function SettingsPage({ settings, onSave, exportData, importRef, importData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; importRef: React.RefObject<HTMLInputElement | null>; importData: (file?: File) => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
+function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
   const [draft, setDraft] = useState(settings);
   const logoRef = useRef<HTMLInputElement>(null);
   useEffect(() => setDraft(settings), [settings]);
@@ -427,7 +393,7 @@ function SettingsPage({ settings, onSave, exportData, importRef, importData, aud
     reader.onload = () => { if (typeof reader.result === "string") set("latexLogo", reader.result); };
     reader.readAsDataURL(file);
   };
-  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><input ref={importRef} hidden type="file" accept="application/json,.json" onChange={event => importData(event.target.files?.[0])}/><Button type="button" variant="outline" onClick={() => importRef.current?.click()}><Download />Importar datos</Button><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
+  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
     <form className="settings-layout" onSubmit={submit}>
       <div className="stack">
         <Section title="Consultora" className="settings-section"><Field label="Nombre de la consultora" name="organization" value={draft.organization} required onChange={value => set("organization", value)} /><p className="field-help">Este nombre se muestra en la navegación y en los informes.</p></Section>
@@ -447,7 +413,7 @@ function SettingsPage({ settings, onSave, exportData, importRef, importData, aud
         </div>
       </div>
     </form>
-    <Section title="Registro de auditoría" className="settings-section" action={audit.length ? <Button type="button" variant="outline" size="sm" onClick={onClearAudit}><Trash2 />Borrar todo</Button> : undefined}>{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span><span /></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "warning" : "info"}>{e.action}</Status><span>{e.detail}</span><span><button className="icon-danger" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDeleteAudit(e.id)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las importaciones, exportaciones y eliminaciones." />}</Section>
+    <Section title="Registro de auditoría" className="settings-section" action={audit.length ? <Button type="button" variant="outline" size="sm" onClick={onClearAudit}><Trash2 />Borrar todo</Button> : undefined}>{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span><span /></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "warning" : "info"}>{e.action}</Status><span>{e.detail}</span><span><button className="icon-danger" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDeleteAudit(e.id)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las exportaciones y eliminaciones." />}</Section>
   </>;
 }
 
