@@ -87,8 +87,14 @@ export function VerticeApp() {
   });
   const doExport = () => { exportBackup(data, settings); log("Exportación", `Respaldo completo: ${data.projects.length} proyectos, ${data.findings.length} hallazgos, ${(data.authorizations ?? []).length} autorizaciones`); };
   const saveAudit = (next: AuditEntry[]) => { setAudit(next); window.localStorage.setItem(AUDIT_KEY, JSON.stringify(next)); };
-  const deleteAuditEntry = (id: string) => saveAudit(audit.filter(e => e.id !== id));
-  const clearAudit = () => { if (window.confirm("¿Borrar todo el registro de auditoría? Esta acción no se puede deshacer.")) saveAudit([]); };
+  const [pendingAuditDelete, setPendingAuditDelete] = useState<string | "all" | null>(null);
+  const deleteAuditEntry = (id: string) => setPendingAuditDelete(id);
+  const clearAudit = () => setPendingAuditDelete("all");
+  const applyAuditDelete = () => {
+    if (pendingAuditDelete === "all") { saveAudit([]); confirm("Registro de auditoría vaciado"); }
+    else if (pendingAuditDelete) { saveAudit(audit.filter(e => e.id !== pendingAuditDelete)); confirm("Registro eliminado"); }
+    setPendingAuditDelete(null);
+  };
 
   useEffect(() => {
     window.localStorage.removeItem("vertice-theme");
