@@ -28,7 +28,7 @@ const tone: Record<string, string> = {
 };
 const fmt = (d?: string) => d ? new Date(d.length === 10 ? d + "T00:00:00" : d).toLocaleDateString("es-AR") : "—";
 
-export function Authorizations({ items, projects, onChange, goProjects, notify }: {
+export function Authorizations({ items = [], projects = [], onChange, goProjects, notify }: {
   items: Authorization[]; projects: ProjectRef[];
   onChange: (next: Authorization[]) => void; goProjects: () => void; notify: (m: string) => void;
 }) {

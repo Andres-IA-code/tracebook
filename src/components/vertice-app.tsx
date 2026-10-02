@@ -108,7 +108,7 @@ export function VerticeApp() {
       <main className="page">
         {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} />}
-        {view === "autorizaciones" && <Authorizations items={data.authorizations} projects={data.projects} onChange={authorizations => updateData({ ...data, authorizations })} goProjects={() => go("proyectos")} notify={confirm} />}
+        {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => updateData({ ...data, authorizations })} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} />}
