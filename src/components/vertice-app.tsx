@@ -374,7 +374,7 @@ function generateReport(project: Project, findings: Finding[], format: ReportFor
   if (format === "latex") download(buildReportLatex(project, list, settings), "application/x-tex", "tex");
   else if (format === "pdf") {
     printHtml(html);
-  } else if (format ===type ReportFormat = "latex" | "pdf" | "docx") download("\ufeff" + html, "application/msword", "doc");
+  } else if (format === "docx") download("\ufeff" + html, "application/msword", "doc");
   else if (format === "html") download(html, "text/html", "html");
   else download(JSON.stringify({ project, findings: list, generatedAt: new Date().toISOString() }, null, 2), "application/json", "json");
 }
