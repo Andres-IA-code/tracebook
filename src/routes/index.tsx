@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { CSSProperties } from "react";
 import { ClipboardCheck, FileText, FolderKanban, KeyRound, Library, ShieldCheck, HardDrive, Lock } from "lucide-react";
 
 import { PublicFooter, PublicHeader } from "@/components/public-site";
+import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -34,12 +36,13 @@ const STEPS = [
 ];
 
 function Landing() {
+  useScrollReveal();
   return (
     <div className="pub-page">
       <PublicHeader />
       <main>
         <section className="pub-wrap pub-hero">
-          <div>
+          <div data-reveal>
             <small className="pub-code">Ref. VRT-001 · Plataforma de pentesting</small>
             <h1>Gestión de pentests de principio a fin</h1>
             <p>Autorización firmada, hallazgos organizados e informe listo para entregar. Todo en un solo lugar.</p>
@@ -48,7 +51,7 @@ function Landing() {
               <Button asChild size="lg" variant="outline"><Link to="/login">Iniciar sesión</Link></Button>
             </div>
           </div>
-          <aside className="pub-spec">
+          <aside className="pub-spec" data-reveal style={{ "--reveal-delay": "120ms" } as CSSProperties}>
             <div className="pub-spec-dark"><small>Flujo completo</small><strong>3 pasos</strong><span>De la firma al informe</span></div>
             <dl>
               <div><dt>Formatos</dt><dd>LaTeX · PDF · Word · HTML</dd></div>
@@ -60,32 +63,32 @@ function Landing() {
         </section>
 
         <section id="funciones" className="pub-wrap pub-section">
-          <h2>Funciones</h2>
+          <h2 data-reveal>Funciones</h2>
           <div className="pub-grid">
-            {FEATURES.map(({ icon: Icon, code, title, text }) => (
-              <article key={code} className="pub-card"><small className="pub-code">{code}</small><Icon /><h3>{title}</h3><p>{text}</p></article>
+            {FEATURES.map(({ icon: Icon, code, title, text }, i) => (
+              <article key={code} className="pub-card" data-reveal style={{ "--reveal-delay": `${i * 70}ms` } as CSSProperties}><small className="pub-code">{code}</small><Icon /><h3>{title}</h3><p>{text}</p></article>
             ))}
           </div>
         </section>
 
         <section id="como-funciona" className="pub-wrap pub-section">
-          <h2>Cómo funciona</h2>
+          <h2 data-reveal>Cómo funciona</h2>
           <ol className="pub-steps">
-            {STEPS.map(s => <li key={s.n}><strong>{s.n}</strong><h3>{s.title}</h3><p>{s.text}</p></li>)}
+            {STEPS.map((s, i) => <li key={s.n} data-reveal style={{ "--reveal-delay": `${i * 100}ms` } as CSSProperties}><strong>{s.n}</strong><h3>{s.title}</h3><p>{s.text}</p></li>)}
           </ol>
         </section>
 
         <section id="seguridad" className="pub-wrap pub-section">
-          <h2>Seguridad</h2>
+          <h2 data-reveal>Seguridad</h2>
           <div className="pub-grid pub-grid-3">
-            <article className="pub-card"><Lock /><h3>Acceso con cuenta</h3><p>Solo entras al espacio de trabajo con tu correo y contraseña.</p></article>
-            <article className="pub-card"><HardDrive /><h3>Datos locales</h3><p>Proyectos y hallazgos se guardan en tu navegador; exporta copias cuando quieras.</p></article>
-            <article className="pub-card"><ShieldCheck /><h3>Trazabilidad</h3><p>Cada exportación y eliminación queda en el registro de auditoría.</p></article>
+            <article className="pub-card" data-reveal><Lock /><h3>Acceso con cuenta</h3><p>Solo entras al espacio de trabajo con tu correo y contraseña.</p></article>
+            <article className="pub-card" data-reveal style={{ "--reveal-delay": "70ms" } as CSSProperties}><HardDrive /><h3>Datos locales</h3><p>Proyectos y hallazgos se guardan en tu navegador; exporta copias cuando quieras.</p></article>
+            <article className="pub-card" data-reveal style={{ "--reveal-delay": "140ms" } as CSSProperties}><ShieldCheck /><h3>Trazabilidad</h3><p>Cada exportación y eliminación queda en el registro de auditoría.</p></article>
           </div>
         </section>
 
         <section className="pub-wrap pub-section">
-          <div className="pub-banner"><div><small>Empieza hoy</small><strong>Tu próximo informe, listo</strong></div><Button asChild size="lg"><Link to="/registro">Crear cuenta</Link></Button></div>
+          <div className="pub-banner" data-reveal><div><small>Empieza hoy</small><strong>Tu próximo informe, listo</strong></div><Button asChild size="lg"><Link to="/registro">Crear cuenta</Link></Button></div>
         </section>
       </main>
       <PublicFooter />
