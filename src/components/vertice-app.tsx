@@ -160,8 +160,43 @@ function Library({ templates, create }: { templates: Template[]; create: () => v
   return <><Header title="Biblioteca de hallazgos" sub={`${templates.length} plantillas`}><Button onClick={create}><Plus />Nueva plantilla</Button></Header><Section>{templates.length ? <div className="data-table library-table"><div className="table-head"><span>Plantilla</span><span>CWE</span><span>Tipo</span><span>Severidad</span><span /></div>{templates.map(template=><div className="table-row" key={template.id}><b>{template.title}</b><span>{template.cwe || "—"}</span><span>{template.category}</span><em className={cn("severity",sevClass[template.severity])}>{template.severity}</em><span>•••</span></div>)}</div> : <EmptyState icon={BookOpen} title="Biblioteca vacía" text="Agrega tus propias plantillas verificadas." action={<Button onClick={create}><Plus />Nueva plantilla</Button>} />}</Section></>;
 }
 
+type ReportFormat = "pdf" | "docx" | "html" | "json";
+const SEV_ORDER = ["Crítica", "Critica", "Alta", "Media", "Baja", "Informativa"];
+
+function buildReportHtml(project: Project, list: Finding[]) {
+  const esc = (s: string) => (s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+  const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
+  const date = new Date().toLocaleDateString("es-AR");
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe — ${esc(project.name)}</title><style>body{font-family:Georgia,serif;max-width:760px;margin:40px auto;color:#141414;line-height:1.5}h1{font-size:24px;border-bottom:3px solid #D9641E;padding-bottom:8px}h2{font-size:17px;margin-top:28px;color:#41423A}h3{font-size:15px;margin:18px 0 4px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:13px}th{background:#ECE2D2}.f{border-left:3px solid #D9641E;padding-left:12px;margin-bottom:16px}pre{white-space:pre-wrap;font-family:inherit}</style></head><body>
+<h1>Informe de prueba de penetración</h1>
+<p><b>Proyecto:</b> ${esc(project.name)}<br><b>Cliente:</b> ${esc(project.client)}<br><b>Tipo:</b> ${esc(project.type)}<br><b>Período:</b> ${esc(project.start)} — ${esc(project.end)}<br><b>Fecha de emisión:</b> ${date}</p>
+<h2>Resumen ejecutivo</h2><p>Se identificaron ${list.length} hallazgos durante la evaluación.</p>
+<table><tr><th>Severidad</th><th>Cantidad</th></tr>${counts.map(([s, n]) => `<tr><td>${esc(s)}</td><td>${n}</td></tr>`).join("")}</table>
+<h2>Detalle de hallazgos</h2>${list.map((f, i) => `<div class="f"><h3>${i + 1}. ${esc(f.title)}</h3><p><b>Severidad:</b> ${esc(f.severity)} · <b>Estado:</b> ${esc(f.status)}</p><pre>${esc(f.description || "Sin descripción")}</pre></div>`).join("")}
+</body></html>`;
+}
+
+function generateReport(project: Project, findings: Finding[], format: ReportFormat) {
+  const list = findings.filter(f => f.project === project.name)
+    .sort((a, b) => SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity));
+  const html = buildReportHtml(project, list);
+  const base = `Informe-${project.name.replace(/[^\w\-]+/g, "_")}`;
+  const download = (content: string, type: string, ext: string) => {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const a = document.createElement("a"); a.href = url; a.download = `${base}.${ext}`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  if (format === "pdf") {
+    const w = window.open("", "_blank"); if (!w) return;
+    w.document.write(html.replace("</body>", "<script>window.onload=()=>window.print()</script></body>")); w.document.close();
+  } else if (format === "docx") download("\ufeff" + html, "application/msword", "doc");
+  else if (format === "html") download(html, "text/html", "html");
+  else download(JSON.stringify({ project, findings: list, generatedAt: new Date().toISOString() }, null, 2), "application/json", "json");
+}
+
 function Reports({ projects, findings }: { projects: Project[]; findings: Finding[] }) {
-  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.project===project.name).length; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><Button size="sm" disabled={!total}><FileText/>Generar</Button></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
+  const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
+  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.project===project.name).length; const fmt = formats[project.id] ?? "pdf"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
 }
 
 function Clients({ clients, create }: { clients: Client[]; create: () => void }) {
