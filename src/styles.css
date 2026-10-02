@@ -38,7 +38,7 @@
   --color-success-strong: var(--success-strong);
   --color-info-soft: var(--info-soft);
   --font-sans: "Archivo Narrow", system-ui, sans-serif;
-  --font-display: "Anton", Impact, sans-serif;
+  --font-display: "Oswald", Impact, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -472,11 +472,11 @@ dl { margin: 0; }
 *, *::before, *::after { border-radius: 0 !important; }
 body { font-family: var(--font-sans); letter-spacing: .01em; }
 .page-head h1, h1, .metric strong, .brand {
-  font-family: var(--font-display); font-weight: 400; text-transform: uppercase; letter-spacing: .005em; line-height: .92;
+  font-family: var(--font-display); font-weight: 300; text-transform: uppercase; letter-spacing: .005em; line-height: .92;
 }
 .page-head h1 { font-size: clamp(40px, 5vw, 72px); }
 .metric strong { font-size: 56px; }
-h2, h3, .section-head, .modal-head, .detail-head { font-family: var(--font-sans); font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+h2, h3, .section-head, .modal-head, .detail-head { font-family: var(--font-sans); font-weight: 500; text-transform: uppercase; letter-spacing: .02em; }
 .page-head p, .breadcrumb, .metric span, .nav-item, .nav-item em, small, th, label, .badge, button, input, select, textarea {
   font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .04em; font-size: 12px;
 }
