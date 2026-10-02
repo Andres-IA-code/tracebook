@@ -78,6 +78,7 @@ export function VerticeApp() {
   const [createKind, setCreateKind] = useState<CreateKind>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<Backup | null>(null);
+  const [pendingReset, setPendingReset] = useState(false);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   useEffect(() => { try { const a = JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]"); if (Array.isArray(a)) setAudit(a); } catch { /* ignore */ } }, []);
   const log = (action: AuditEntry["action"], detail: string) => setAudit(current => {
@@ -107,8 +108,9 @@ export function VerticeApp() {
 
   const updateData = (next: DataState) => { setData(next); window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); };
   const updateSettings = (next: SettingsState) => { setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); confirm("Configuración guardada"); };
-  const resetSettings = () => {
-    if (!window.confirm("¿Borrar la configuración ingresada? Volverá a los valores predeterminados. Los datos cargados (proyectos, hallazgos, etc.) no se borran.")) return;
+  const resetSettings = () => setPendingReset(true);
+  const applyResetSettings = () => {
+    setPendingReset(false);
     log("Eliminación", "Configuración restablecida a los valores predeterminados");
     setSettings(DEFAULT_SETTINGS);
     window.localStorage.removeItem(SETTINGS_KEY);
