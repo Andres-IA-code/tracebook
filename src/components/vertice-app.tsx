@@ -264,7 +264,7 @@ function Library({ templates, create, onDelete }: { templates: Template[]; creat
   {viewing && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setViewing(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="tpl-title"><div className="modal-head"><div><small>Plantilla</small><h2 id="tpl-title">{viewing.title}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={()=>setViewing(null)}><X/></Button></div><div className="data-table"><div className="table-row"><span>CWE</span><b>{viewing.cwe || "—"}</b></div><div className="table-row"><span>Tipo</span><b>{viewing.category}</b></div><div className="table-row"><span>Severidad</span><em className={cn("severity",sevClass[viewing.severity])}>{viewing.severity}</em></div></div><div className="modal-actions"><Button variant="outline" onClick={()=>del(viewing)}><Trash2/>Eliminar</Button><Button onClick={()=>setViewing(null)}>Cerrar</Button></div></section></div>}</>;
 }
 
-type ReportFormat = "pdf" | "docx" | "html" | "json";
+type ReportFormat = "latex" | "pdf" | "docx" | "html" | "json";
 const SEV_ORDER = ["Crítico", "Alto", "Medio", "Bajo"];
 
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><rect width="44" height="44" rx="10" fill="#141414"/><path d="M22 9 35 33H9Z" fill="none" stroke="#ED7D27" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="#ED7D27"/></svg>`;
@@ -286,6 +286,81 @@ function buildReportHtml(project: Project, list: Finding[], settings: SettingsSt
 </body></html>`;
 }
 
+function buildReportLatex(project: Project, list: Finding[], settings: SettingsState) {
+  const t = (s: string) => (s ?? "").replace(/[\\{}&%$#_^~]/g, c => ({ "\\": "\\textbackslash{}", "{": "\\{", "}": "\\}", "&": "\\&", "%": "\\%", "$": "\\$", "#": "\\#", "_": "\\_", "^": "\\textasciicircum{}", "~": "\\textasciitilde{}" }[c]!));
+  const multi = (s: string) => t(s).split(/\n{2,}/).map(p => p.replace(/\n/g, "\\\\\n")).join("\n\n");
+  const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
+  const date = new Date().toLocaleDateString("es-AR");
+  const org = t(settings.organization || "Vértice");
+  const issuer = settings.userName ? `Emitido por ${t(settings.userName)}${settings.role ? ` (${t(settings.role)})` : ""}${settings.email ? ` \\textperiodcentered{} ${t(settings.email)}` : ""}` : "";
+  return `\\documentclass[11pt,a4paper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage[spanish]{babel}
+\\usepackage[margin=2.5cm]{geometry}
+\\usepackage{xcolor,booktabs,tikz,fancyhdr,titlesec}
+\\definecolor{vorange}{HTML}{D9641E}
+\\definecolor{vdark}{HTML}{141414}
+\\definecolor{vgray}{HTML}{757575}
+\\titleformat{\\section}{\\Large\\bfseries\\color{vdark}}{}{0pt}{}[\\color{vorange}\\titlerule]
+\\pagestyle{fancy}\\fancyhf{}
+\\lfoot{\\footnotesize\\color{vgray} ${org} \\textperiodcentered{} Documento confidencial}
+\\rfoot{\\footnotesize\\color{vgray} \\thepage}
+\\renewcommand{\\headrulewidth}{0pt}
+
+\\begin{document}
+
+\\noindent\\begin{tikzpicture}[baseline=-4pt]
+  \\fill[vdark] (0,0) rectangle (1.1,1.1);
+  \\draw[vorange,line width=1.4pt,line join=round] (0.55,0.88) -- (0.88,0.25) -- (0.22,0.25) -- cycle;
+  \\fill[vorange] (0.55,0.88) circle (0.08);
+\\end{tikzpicture}\\hspace{0.4cm}%
+\\begin{minipage}[c]{0.8\\textwidth}
+{\\Large\\bfseries ${org}}\\\\
+{\\small\\color{vgray} Informe de prueba de penetración${issuer ? ` \\textperiodcentered{} ${issuer}` : ""}}
+\\end{minipage}
+
+\\vspace{1cm}
+{\\Huge\\bfseries Informe de prueba de penetración}\\par
+{\\color{vorange}\\rule{\\textwidth}{2pt}}
+
+\\section*{Identificación del proyecto}
+\\begin{tabular}{@{}ll@{}}
+{\\color{vgray}Proyecto} & \\textbf{${t(project.name)}} \\\\
+{\\color{vgray}ID de proyecto} & \\texttt{${t(project.id)}} \\\\
+{\\color{vgray}Cliente} & ${t(project.client)} \\\\
+{\\color{vgray}Tipo de evaluación} & ${t(project.type)} \\\\
+{\\color{vgray}Estado} & ${t(project.status)} \\\\
+{\\color{vgray}Período de ejecución} & ${t(project.start)} --- ${t(project.end)} \\\\
+{\\color{vgray}Fecha de emisión} & ${date} \\\\
+\\end{tabular}
+
+\\section*{Resumen ejecutivo}
+Se identificaron ${list.length} hallazgos durante la evaluación.
+
+\\begin{center}
+\\begin{tabular}{lr}
+\\toprule
+\\textbf{Severidad} & \\textbf{Cantidad} \\\\
+\\midrule
+${counts.map(([s, n]) => `${t(s)} & ${n} \\\\`).join("\n")}
+\\bottomrule
+\\end{tabular}
+\\end{center}
+
+\\section*{Detalle de hallazgos}
+${list.map((f, i) => `\\subsection*{${i + 1}. ${t(f.title)}}
+\\textbf{Severidad:} ${t(f.severity)} \\quad \\textbf{Estado:} ${t(f.status)}
+
+${multi(f.description || "Sin descripción")}
+`).join("\n")}
+\\vfill
+{\\footnotesize\\color{vgray} ${org} \\textperiodcentered{} Informe generado con Vértice \\textperiodcentered{} ${date} \\textperiodcentered{} Documento confidencial}
+
+\\end{document}
+`;
+}
+
 function generateReport(project: Project, findings: Finding[], format: ReportFormat, settings: SettingsState) {
   const list = findings.filter(f => f.projectId === project.id)
     .sort((a, b) => SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity));
@@ -296,7 +371,8 @@ function generateReport(project: Project, findings: Finding[], format: ReportFor
     const a = document.createElement("a"); a.href = url; a.download = `${base}.${ext}`; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  if (format === "pdf") {
+  if (format === "latex") download(buildReportLatex(project, list, settings), "application/x-tex", "tex");
+  else if (format === "pdf") {
     printHtml(html);
   } else if (format === "docx") download("\ufeff" + html, "application/msword", "doc");
   else if (format === "html") download(html, "text/html", "html");
@@ -305,7 +381,7 @@ function generateReport(project: Project, findings: Finding[], format: ReportFor
 
 function Reports({ projects, findings, settings }: { projects: Project[]; findings: Finding[]; settings: SettingsState }) {
   const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
-  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.projectId===project.id).length; const fmt = formats[project.id] ?? "pdf"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
+  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.projectId===project.id).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
 }
 
 function Clients({ clients, create, onDelete }: { clients: Client[]; create: () => void; onDelete: (id: string) => void }) {
