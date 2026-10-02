@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
-  AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
+  AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
   LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
