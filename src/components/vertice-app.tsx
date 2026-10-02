@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, Download, X,
+  LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,6 @@ const DEFAULT_SETTINGS: SettingsState = {
 
 type AuditEntry = { id: string; at: string; user: string; action: "Importación" | "Exportación" | "Eliminación"; detail: string };
 const AUDIT_KEY = "vertice-audit";
-type Backup = { data: DataState; settings?: Partial<SettingsState> | undefined };
 function normalizeData(parsed: Partial<DataState>): DataState {
   const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] };
   if (![next.projects, next.findings, next.clients, next.templates, next.authorizations].every(Array.isArray)) throw new Error("formato");
@@ -44,8 +43,6 @@ function normalizeData(parsed: Partial<DataState>): DataState {
     return p ? { ...f, projectId: p.id } : f;
   });
   return next;
-}
-function mergeById<T extends { id: string }>(a: T[], b: T[]) { const ids = new Set(a.map(x => x.id)); return [...a, ...b.filter(x => !ids.has(x.id))]; }
 function exportBackup(data: DataState, settings: SettingsState) {
   const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: "Vértice" }, null, 2);
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
@@ -85,8 +82,6 @@ export function VerticeApp() {
   const [data, setData] = useState<DataState>(EMPTY_DATA);
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [createKind, setCreateKind] = useState<CreateKind>(null);
-  const importRef = useRef<HTMLInputElement>(null);
-  const [pendingImport, setPendingImport] = useState<Backup | null>(null);
   const [pendingReset, setPendingReset] = useState(false);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   useEffect(() => { try { const a = JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]"); if (Array.isArray(a)) setAudit(a); } catch { /* ignore */ } }, []);
@@ -138,28 +133,6 @@ export function VerticeApp() {
     updateData({ ...data, [key]: [...data[key], item] });
     setCreateKind(null);
     confirm("Datos guardados correctamente");
-  };
-  const importData = async (file?: File) => {
-    if (!file) return;
-    try {
-      const parsed = JSON.parse(await file.text()) as Partial<DataState> & { settings?: Partial<SettingsState> };
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
-      const backup: Backup = { data: normalizeData(parsed), settings: parsed.settings && typeof parsed.settings === "object" ? parsed.settings : undefined };
-      const hasData = Object.values(data).some(list => list.length > 0);
-      if (hasData) setPendingImport(backup); else applyImport(backup, "replace");
-    } catch { confirm("El archivo no tiene un formato válido"); }
-    if (importRef.current) importRef.current.value = "";
-  };
-  const applyImport = (backup: Backup, mode: "merge" | "replace") => {
-    if (mode === "replace") {
-      updateData(backup.data);
-      if (backup.settings) { const s = { ...DEFAULT_SETTINGS, ...backup.settings }; setSettings(s); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
-    } else {
-      updateData(normalizeData({ projects: mergeById(data.projects, backup.data.projects), findings: mergeById(data.findings, backup.data.findings), clients: mergeById(data.clients, backup.data.clients), templates: mergeById(data.templates, backup.data.templates), authorizations: mergeById(data.authorizations ?? [], backup.data.authorizations) }));
-    }
-    const b = backup.data;
-    log("Importación", `${mode === "replace" ? "Reemplazar todo" : "Combinar"}: ${b.projects.length} proyectos, ${b.findings.length} hallazgos, ${b.clients.length} clientes, ${b.templates.length} plantillas, ${b.authorizations.length} autorizaciones`);
-    setPendingImport(null); confirm("Datos importados correctamente");
   };
   const deleteProject = (id: string) => {
     const p = data.projects.find(x => x.id === id); if (!p) return;
