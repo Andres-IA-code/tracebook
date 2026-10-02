@@ -42,7 +42,7 @@ export function PublicFooter() {
     <footer className="pub-footer">
       <div className="pub-wrap pub-footer-inner">
         <Logo />
-        <small>Gestión de pentests · Autorización, hallazgos e informes</small>
+        <small>Gestión de pentest · Autorización, hallazgos e informes</small>
         <small>© {new Date().getFullYear()} Vértice</small>
       </div>
     </footer>

@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Vértice — Gestión de pentests de principio a fin" },
+      { title: "Vértice — Gestión de pentest de principio a fin" },
       { name: "description", content: "Autorización firmada, hallazgos organizados e informe listo para entregar. Todo en un solo lugar." },
-      { property: "og:title", content: "Vértice — Gestión de pentests de principio a fin" },
+      { property: "og:title", content: "Vértice — Gestión de pentest de principio a fin" },
       { property: "og:description", content: "Autorización firmada, hallazgos organizados e informe listo para entregar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -44,7 +44,7 @@ function Landing() {
         <section className="pub-wrap pub-hero">
           <div data-reveal>
             <small className="pub-code">Ref. VRT-001 · Plataforma de pentesting</small>
-            <h1>Gestión de pentests de principio a fin</h1>
+            <h1>Gestión de pentest de principio a fin</h1>
             <p>Autorización firmada, hallazgos organizados e informe listo para entregar. Todo en un solo lugar.</p>
             <div className="pub-cta">
               <Button asChild size="lg"><Link to="/registro">Empezar ahora</Link></Button>

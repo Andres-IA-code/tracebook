@@ -79,7 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Vértice" },
-      { name: "description", content: "Plataforma para la gestión de pentests." },
+      { name: "description", content: "Plataforma para la gestión de pentest." },
       { name: "author", content: "Vértice" },
       { name: "theme-color", content: "#141414" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
