@@ -181,7 +181,7 @@ declare global {
 // "Salir" only makes sense in the installed desktop app; browsers block closing tabs.
 const isDesktopApp = typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent);
 
-function Dashboard({ data, counts, go, create, importRef, importData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; importRef: React.RefObject<HTMLInputElement | null>; importData: (file?: File) => void }) {
+function Dashboard({ data, counts, go, create, importRef, importData, exportData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; importRef: React.RefObject<HTMLInputElement | null>; importData: (file?: File) => void; exportData: () => void }) {
   const date = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
   const metrics = [["Proyectos activos",counts[0],FolderOpen],["Hallazgos abiertos",counts[1],Bug],["Críticos",counts[2],AlertTriangle],["Informes por entregar",counts[3],FileText]] as const;
   return <><Header title="Panel de control" sub={date.charAt(0).toUpperCase()+date.slice(1)}><input ref={importRef} hidden type="file" accept="application/json,.json" onChange={event => importData(event.target.files?.[0])}/><Button variant="outline" onClick={() => importRef.current?.click()}><Upload />Importar datos</Button><Button variant="outline" onClick={exportData}><Download />Exportar datos</Button><Button onClick={create}><Plus />Nuevo proyecto</Button></Header>
