@@ -184,7 +184,7 @@ export function VerticeApp() {
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
-        {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); if (t) log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); }} />}
+        {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
         {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
@@ -206,6 +206,13 @@ export function VerticeApp() {
         <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrará la configuración ingresada (consultora, perfil y notificaciones) y todo volverá a los valores predeterminados.</p>
         <p>Los datos cargados (proyectos, hallazgos, autorizaciones, clientes y plantillas) <b>no se borran</b>. Esta acción quedará registrada en el registro de auditoría.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingReset(false)}>Cancelar</Button><Button type="submit"><RotateCcw />Restablecer</Button></div>
+      </form></section></div> : null}
+    {pendingDelete ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingDelete(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <div className="modal-head"><div><small>{pendingDelete.group}</small><h2 id="delete-title">{pendingDelete.heading}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingDelete(null)}><X /></Button></div>
+      <form onSubmit={event => { event.preventDefault(); pendingDelete.run(); setPendingDelete(null); }}>
+        <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> {pendingDelete.description}</p>
+        <p>Esta acción no se puede deshacer.</p>
+        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingDelete(null)}>Cancelar</Button><Button type="submit"><Trash2 />{pendingDelete.confirmLabel}</Button></div>
       </form></section></div> : null}
     {notice ? <div className="toast"><Check />{notice}</div> : null}
   </div>;
