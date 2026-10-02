@@ -264,7 +264,7 @@ function Library({ templates, create, onDelete }: { templates: Template[]; creat
   {viewing && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setViewing(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="tpl-title"><div className="modal-head"><div><small>Plantilla</small><h2 id="tpl-title">{viewing.title}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={()=>setViewing(null)}><X/></Button></div><div className="data-table"><div className="table-row"><span>CWE</span><b>{viewing.cwe || "—"}</b></div><div className="table-row"><span>Tipo</span><b>{viewing.category}</b></div><div className="table-row"><span>Severidad</span><em className={cn("severity",sevClass[viewing.severity])}>{viewing.severity}</em></div></div><div className="modal-actions"><Button variant="outline" onClick={()=>del(viewing)}><Trash2/>Eliminar</Button><Button onClick={()=>setViewing(null)}>Cerrar</Button></div></section></div>}</>;
 }
 
-type ReportFormat = "pdf" | "docx" | "html" | "json";
+type ReportFormat = "latex" | "pdf" | "docx"| "docx" | "html" | "json";
 const SEV_ORDER = ["Crítico", "Alto", "Medio", "Bajo"];
 
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><rect width="44" height="44" rx="10" fill="#141414"/><path d="M22 9 35 33H9Z" fill="none" stroke="#ED7D27" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="#ED7D27"/></svg>`;
@@ -374,14 +374,14 @@ function generateReport(project: Project, findings: Finding[], format: ReportFor
   if (format === "latex") download(buildReportLatex(project, list, settings), "application/x-tex", "tex");
   else if (format === "pdf") {
     printHtml(html);
-  } else if (format === "docx") download("\ufeff" + html, "application/msword", "doc");
+  } else if (format ===type ReportFormat = "latex" | "pdf" | "docx") download("\ufeff" + html, "application/msword", "doc");
   else if (format === "html") download(html, "text/html", "html");
   else download(JSON.stringify({ project, findings: list, generatedAt: new Date().toISOString() }, null, 2), "application/json", "json");
 }
 
 function Reports({ projects, findings, settings }: { projects: Project[]; findings: Finding[]; settings: SettingsState }) {
   const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
-  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.projectId===project.id).length; const fmt = formats[project.id] ?? "pdf"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
+  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.projectId===project.id).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
 }
 
 function Clients({ clients, create, onDelete }: { clients: Client[]; create: () => void; onDelete: (id: string) => void }) {
