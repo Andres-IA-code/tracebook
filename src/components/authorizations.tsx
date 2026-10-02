@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Ban, CalendarClock, Check, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
+import { Ban, CalendarClock, Check, FileDown, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -138,7 +138,8 @@ function AuthDetail({ a, onEdit, onDelete, onSend, onMail, onSign, onReject, onR
       {editable ? <Button onClick={onSign} variant={a.status === "Enviada" ? "default" : "outline"}><FileSignature />Registrar firma</Button> : null}
       {a.status === "Enviada" ? <Button variant="outline" onClick={onReject}><X />Rechazada</Button> : null}
       {a.status === "Firmada" ? <Button variant="outline" onClick={onRevoke}><Ban />Revocar</Button> : null}
-      <Button variant="outline" onClick={() => printAuth(a)}><Printer />Imprimir / PDF</Button>
+      <Button variant="outline" onClick={() => downloadAuthPdf(a)}><FileDown />Descargar PDF</Button>
+      <Button variant="outline" onClick={() => printAuth(a)}><Printer />Imprimir</Button>
       {editable ? <Button variant="ghost" onClick={onEdit}><Pencil />Editar</Button> : null}
       <Button variant="ghost" onClick={onDelete}><Trash2 />Eliminar</Button>
     </div>
