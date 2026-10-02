@@ -77,7 +77,7 @@ function EmptyState({ icon: Icon, title, text, action }: { icon: typeof FolderOp
   return <div className="empty-state"><span><Icon /></span><h3>{title}</h3><p>{text}</p>{action}</div>;
 }
 
-export function VerticeApp({ userEmail, onSignOut }: { userEmail?: string; onSignOut?: () => void } = {}) {
+export function VerticeApp({ userEmail, onSignOut }: { userEmail?: string | undefined; onSignOut?: (() => void) | undefined } = {}) {
   const [view, setView] = useState<View>("panel");
   const [mobileNav, setMobileNav] = useState(false);
   const [notice, setNotice] = useState("");

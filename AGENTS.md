@@ -18,3 +18,4 @@
 - Link findings to projects by `projectId` (legacy name links are upgraded on load/import); project deletion cascades to linked findings and authorizations, so records never orphan.
 - Print reports/authorizations through a hidden in-page iframe (`src/lib/print-html.ts`), because Electron blocks new blank windows.
 - Keep LaTeX report branding in the persisted workspace settings and embed custom logos into the generated source so exports remain portable.
+- Web routes: `/` public landing, `/login` `/registro` `/recuperar` `/restablecer` auth via Lovable Cloud, `/app` renders VerticeApp behind a client-side session guard; desktop entry still mounts VerticeApp directly without auth — workspace data stays local, auth only gates web access.
