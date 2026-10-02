@@ -111,7 +111,7 @@ export function VerticeApp() {
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => updateData({ ...data, authorizations })} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} />}
-        {view === "informes" && <Reports projects={data.projects} findings={data.findings} />}
+        {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} />}
         {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} />}
       </main>
