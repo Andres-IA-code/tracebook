@@ -15,3 +15,5 @@
 - Keep the desktop build as a separate static Vite entry consumed by Electron, so the web SSR build and installed app share the same workspace component without changing deployment behavior.
 - Keep desktop startup local-only and package its application files into ASAR to minimize startup filesystem work.
 - Keep Vértice permanently dark-themed across web and desktop; do not expose a light-mode switch.
+- Link findings to projects by `projectId` (legacy name links are upgraded on load/import); project deletion cascades to linked findings and authorizations, so records never orphan.
+- Print reports/authorizations through a hidden in-page iframe (`src/lib/print-html.ts`), because Electron blocks new blank windows.
