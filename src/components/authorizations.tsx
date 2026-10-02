@@ -112,7 +112,7 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
   </>;
 }
 
-function AuthDetail({ a, onEdit, onDelete, onSend, onSign, onReject, onRevoke }: { a: Authorization; onEdit: () => void; onDelete: () => void; onSend: () => void; onSign: () => void; onReject: () => void; onRevoke: () => void }) {
+function AuthDetail({ a, onEdit, onDelete, onSend, onMail, onSign, onReject, onRevoke }: { a: Authorization; onEdit: () => void; onDelete: () => void; onSend: () => void; onMail: () => void; onSign: () => void; onReject: () => void; onRevoke: () => void }) {
   const s = effectiveStatus(a);
   const editable = a.status === "Borrador" || a.status === "Enviada";
   return <div className="detail-body auth-detail">
@@ -134,6 +134,7 @@ function AuthDetail({ a, onEdit, onDelete, onSend, onSign, onReject, onRevoke }:
     </ol>
     <div className="auth-actions">
       {a.status === "Borrador" ? <Button onClick={onSend}><Send />Marcar como enviada</Button> : null}
+      {editable ? <Button variant="outline" onClick={onMail}><Mail />Enviar al cliente</Button> : null}
       {editable ? <Button onClick={onSign} variant={a.status === "Enviada" ? "default" : "outline"}><FileSignature />Registrar firma</Button> : null}
       {a.status === "Enviada" ? <Button variant="outline" onClick={onReject}><X />Rechazada</Button> : null}
       {a.status === "Firmada" ? <Button variant="outline" onClick={onRevoke}><Ban />Revocar</Button> : null}
