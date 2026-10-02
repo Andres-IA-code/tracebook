@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Trash2, Upload, Download, X,
+  LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, Download, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -107,6 +107,13 @@ export function VerticeApp() {
 
   const updateData = (next: DataState) => { setData(next); window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); };
   const updateSettings = (next: SettingsState) => { setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); confirm("Configuración guardada"); };
+  const resetSettings = () => {
+    if (!window.confirm("¿Borrar la configuración ingresada? Volverá a los valores predeterminados. Los datos cargados (proyectos, hallazgos, etc.) no se borran.")) return;
+    log("Eliminación", "Configuración restablecida a los valores predeterminados");
+    setSettings(DEFAULT_SETTINGS);
+    window.localStorage.removeItem(SETTINGS_KEY);
+    confirm("Configuración restablecida");
+  };
   const confirm = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 2600); };
   const go = (next: View) => { setView(next); setMobileNav(false); };
   const addItem = (kind: Exclude<CreateKind, null>, item: Project | Finding | Client | Template) => {
@@ -175,7 +182,7 @@ export function VerticeApp() {
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); if (t) log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
-        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} />}
+        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
@@ -282,8 +289,9 @@ function Clients({ clients, create, onDelete }: { clients: Client[]; create: () 
   return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span><span><button className="icon-danger" aria-label={`Eliminar ${client.name}`} title="Eliminar cliente" onClick={() => del(client)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section></>;
 }
 
-function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onClearAudit }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void }) {
+function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
   const [draft, setDraft] = useState(settings);
+  useEffect(() => setDraft(settings), [settings]);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(draft); };
   const set = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => setDraft(current => ({ ...current, [key]: value }));
   return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
@@ -294,7 +302,10 @@ function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onCl
       </div>
       <div className="stack">
         <Section title="Notificaciones" className="settings-section"><div className="setting-row"><span><b>Alertas por correo</b><small>Recibe avisos sobre autorizaciones y hallazgos.</small></span><label className="switch"><input type="checkbox" checked={draft.emailAlerts} onChange={event => set("emailAlerts", event.target.checked)} /><i /></label></div><div className="setting-row"><span><b>Informes listos</b><small>Recibe un aviso cuando un informe esté disponible.</small></span><label className="switch"><input type="checkbox" checked={draft.reportAlerts} onChange={event => set("reportAlerts", event.target.checked)} /><i /></label></div></Section>
-        <Button type="submit" size="lg"><Check />Guardar configuración</Button>
+        <div className="settings-actions">
+          <Button type="submit" size="lg"><Check />Guardar configuración</Button>
+          <Button type="button" variant="outline" onClick={onResetSettings}><RotateCcw />Restablecer configuración</Button>
+        </div>
       </div>
     </form>
     <Section title="Registro de auditoría" className="settings-section" action={audit.length ? <Button type="button" variant="outline" size="sm" onClick={onClearAudit}><Trash2 />Borrar todo</Button> : undefined}>{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span><span /></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "warning" : "info"}>{e.action}</Status><span>{e.detail}</span><span><button className="icon-danger" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDeleteAudit(e.id)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las importaciones, exportaciones y eliminaciones." />}</Section>
