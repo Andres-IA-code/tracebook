@@ -180,7 +180,7 @@ export function VerticeApp() {
       <div className="modal-head"><div><small>Registro de auditoría</small><h2 id="audit-title">{pendingAuditDelete === "all" ? "Borrar todo el registro" : "Eliminar registro"}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingAuditDelete(null)}><X /></Button></div>
       <form onSubmit={event => { event.preventDefault(); applyAuditDelete(); }}>
         {pendingAuditDelete === "all"
-          ? <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrarán los {audit.length} registro(s) del historial de auditoría: importaciones, exportaciones y eliminaciones registradas hasta ahora.</p>
+          ? <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrarán los {audit.length} registro(s) del historial de auditoría: exportaciones y eliminaciones registradas hasta ahora.</p>
           : <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se eliminará este registro: <b>{entry ? `${entry.action} — ${entry.detail}` : "registro seleccionado"}</b>.</p>}
         <p>Esta acción no se puede deshacer y no queda registrada en el historial.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingAuditDelete(null)}>Cancelar</Button><Button type="submit"><Trash2 />{pendingAuditDelete === "all" ? "Borrar todo" : "Eliminar"}</Button></div>
@@ -412,7 +412,7 @@ function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onCl
         </div>
       </div>
     </form>
-    <Section title="Registro de auditoría" className="settings-section" action={audit.length ? <Button type="button" variant="outline" size="sm" onClick={onClearAudit}><Trash2 />Borrar todo</Button> : undefined}>{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span><span /></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "warning" : "info"}>{e.action}</Status><span>{e.detail}</span><span><button className="icon-danger" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDeleteAudit(e.id)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las importaciones, exportaciones y eliminaciones." />}</Section>
+    <Section title="Registro de auditoría" className="settings-section" action={audit.length ? <Button type="button" variant="outline" size="sm" onClick={onClearAudit}><Trash2 />Borrar todo</Button> : undefined}>{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span><span /></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "warning" : "info"}>{e.action}</Status><span>{e.detail}</span><span><button className="icon-danger" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDeleteAudit(e.id)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las exportaciones y eliminaciones." />}</Section>
   </>;
 }
 
