@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Ban, CalendarClock, Check, FileSignature, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
+import { Ban, CalendarClock, Check, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -77,6 +77,29 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
         <section className="surface">{current ? <AuthDetail a={current}
           onEdit={() => setEditing(current)} onDelete={() => remove(current.id)}
           onSend={() => patch(current.id, { status: "Enviada", sentAt: new Date().toISOString() }, "Marcada como enviada al cliente")}
+          onMail={() => {
+            if (!current.signerEmail) { window.alert("Esta autorización no tiene correo del firmante. Editala para agregarlo."); return; }
+            const subject = `Autorización de pruebas — ${current.projectName}`;
+            const body = [
+              `Estimado/a ${current.signer}:`,
+              "",
+              `Le enviamos la autorización de pruebas de penetración correspondiente al proyecto "${current.projectName}" (${current.client}).`,
+              "",
+              `Ventana de pruebas: ${fmt(current.windowStart)} al ${fmt(current.windowEnd)}${current.hours ? ` — ${current.hours}` : ""}`,
+              `Tipo de prueba: ${current.testTypes.join(", ") || "—"}`,
+              "",
+              "Alcance autorizado:",
+              current.scope,
+              "",
+              `Exclusiones: ${current.exclusions || "Sin exclusiones declaradas"}`,
+              current.notes ? `\nCondiciones adicionales:\n${current.notes}` : "",
+              "",
+              "Por favor, revise el documento y confirme su conformidad para registrar la firma.",
+            ].filter(Boolean).join("\n");
+            window.location.href = `mailto:${current.signerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            if (current.status === "Borrador") patch(current.id, { status: "Enviada", sentAt: new Date().toISOString() }, "Autorización enviada al cliente");
+            else notify("Se abrió el correo para el cliente");
+          }}
           onSign={() => setSigning(current)}
           onReject={() => { const reason = window.prompt("Motivo del rechazo"); if (reason !== null) patch(current.id, { status: "Rechazada", reason }, "Autorización rechazada"); }}
           onRevoke={() => { const reason = window.prompt("Motivo de la revocación"); if (reason !== null) patch(current.id, { status: "Revocada", reason }, "Autorización revocada"); }}
