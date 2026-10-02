@@ -6,17 +6,18 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Authorizations, type Authorization } from "@/components/authorizations";
 
 type View = "panel" | "proyectos" | "autorizaciones" | "hallazgos" | "biblioteca" | "informes" | "clientes" | "configuracion";
 type Project = { id: string; name: string; client: string; type: string; status: string; start: string; end: string };
 type Finding = { id: string; title: string; severity: string; status: string; project: string; description: string };
 type Client = { id: string; name: string; industry: string; contact: string; email: string };
 type Template = { id: string; title: string; cwe: string; category: string; severity: string };
-type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; templates: Template[] };
+type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; templates: Template[]; authorizations: Authorization[] };
 type SettingsState = { organization: string; userName: string; email: string; role: string; timezone: string; emailAlerts: boolean; reportAlerts: boolean };
 type CreateKind = "project" | "finding" | "client" | "template" | null;
 
-const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [] };
+const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [] };
 const STORAGE_KEY = "vertice-workspace-data";
 const SETTINGS_KEY = "vertice-settings";
 const DEFAULT_SETTINGS: SettingsState = { organization: "", userName: "", email: "", role: "Responsable", timezone: "America/Argentina/Buenos_Aires", emailAlerts: true, reportAlerts: true };
@@ -61,7 +62,7 @@ export function VerticeApp() {
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData) as Partial<DataState>;
-        setData({ projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [] });
+        setData({ projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] });
       } catch { window.localStorage.removeItem(STORAGE_KEY); }
     }
     const savedSettings = window.localStorage.getItem(SETTINGS_KEY);
@@ -85,8 +86,8 @@ export function VerticeApp() {
     if (!file) return;
     try {
       const parsed = JSON.parse(await file.text()) as Partial<DataState>;
-      const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [] };
-      if (![next.projects, next.findings, next.clients, next.templates].every(Array.isArray)) throw new Error();
+      const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] };
+      if (![next.projects, next.findings, next.clients, next.templates, next.authorizations].every(Array.isArray)) throw new Error();
       updateData(next); confirm("Datos importados correctamente");
     } catch { confirm("El archivo no tiene un formato válido"); }
     if (importRef.current) importRef.current.value = "";
@@ -107,7 +108,7 @@ export function VerticeApp() {
       <main className="page">
         {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} />}
-        {view === "autorizaciones" && <Authorizations projects={data.projects} go={go} />}
+        {view === "autorizaciones" && <Authorizations items={data.authorizations} projects={data.projects} onChange={authorizations => updateData({ ...data, authorizations })} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} />}
@@ -146,10 +147,6 @@ function Projects({ projects, create }: { projects: Project[]; create: () => voi
   const [query,setQuery] = useState("");
   const rows = projects.filter(project => `${project.name} ${project.client}`.toLowerCase().includes(query.toLowerCase()));
   return <><Header title="Proyectos" sub={`${projects.length} proyectos`}><label className="search"><Search /><input aria-label="Buscar proyecto o cliente" placeholder="Buscar proyecto o cliente" value={query} onChange={e=>setQuery(e.target.value)}/></label><Button onClick={create}><Plus />Nuevo proyecto</Button></Header><Section>{projects.length ? <><div className="data-table projects-table"><div className="table-head"><span>Proyecto</span><span>Estado</span><span>Fechas</span><span>Cliente</span><span>Tipo</span><span /></div>{rows.map(project => <div className="table-row" key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><Status tone="info">{project.status}</Status><span>{project.start} — {project.end}</span><span>{project.client}</span><span>{project.type}</span><span>•••</span></div>)}</div><div className="table-foot"><span>Mostrando {rows.length} de {projects.length}</span></div></> : <EmptyState icon={FolderOpen} title="Sin proyectos cargados" text="Registra un proyecto real para comenzar a trabajar." action={<Button onClick={create}><Plus />Nuevo proyecto</Button>} />}</Section></>;
-}
-
-function Authorizations({ projects, go }: { projects: Project[]; go: (v: View) => void }) {
-  return <><Header title="Autorizaciones" sub="Documentos de alcance y permisos de prueba" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><Status tone="warning">Sin autorización cargada</Status></div>)}</div></Section> : <Section><EmptyState icon={ShieldCheck} title="Sin autorizaciones pendientes" text="Las autorizaciones aparecerán cuando cargues un proyecto." action={<Button onClick={() => go("proyectos")}><Plus />Ir a proyectos</Button>} /></Section>}</>;
 }
 
 function Findings({ findings, create }: { findings: Finding[]; create: () => void }) {
