@@ -17,3 +17,4 @@
 - Keep Vértice permanently dark-themed across web and desktop; do not expose a light-mode switch.
 - Link findings to projects by `projectId` (legacy name links are upgraded on load/import); project deletion cascades to linked findings and authorizations, so records never orphan.
 - Print reports/authorizations through a hidden in-page iframe (`src/lib/print-html.ts`), because Electron blocks new blank windows.
+- Keep LaTeX report branding in the persisted workspace settings and embed custom logos into the generated source so exports remain portable.
