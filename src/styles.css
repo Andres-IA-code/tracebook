@@ -551,6 +551,9 @@ input, textarea, select { text-transform: none; font-size: 13px; }
 .pub-steps strong { font-family: Oswald, sans-serif; font-weight: 300; font-size: 64px; line-height: 1; color: var(--primary); }
 .pub-banner { flex-direction: row; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 64px; }
 .pub-banner > div { display: flex; flex-direction: column; gap: 6px; }
+[data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; transition-delay: var(--reveal-delay, 0ms); }
+[data-reveal].reveal-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { [data-reveal] { opacity: 1; transform: none; transition: none; } }
 .pub-footer { border-top: 3px solid var(--foreground); padding: 28px 0; }
 .pub-footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .pub-footer small { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-foreground); }
