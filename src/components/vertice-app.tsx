@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Upload, X,
+  LayoutDashboard, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -107,7 +107,7 @@ export function VerticeApp() {
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div></div>
       <main className="page">
         {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} />}
-        {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} />}
+        {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={id => { const p = data.projects.find(x => x.id === id); if (p && window.confirm(`¿Eliminar el proyecto "${p.name}"? Esta acción no se puede deshacer.`)) { updateData({ ...data, projects: data.projects.filter(x => x.id !== id) }); confirm("Proyecto eliminado"); } }} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => updateData({ ...data, authorizations })} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} />}
@@ -143,10 +143,10 @@ function Dashboard({ data, counts, go, create, importRef, importData }: { data: 
   </>;
 }
 
-function Projects({ projects, create }: { projects: Project[]; create: () => void }) {
+function Projects({ projects, create, onDelete }: { projects: Project[]; create: () => void; onDelete: (id: string) => void }) {
   const [query,setQuery] = useState("");
   const rows = projects.filter(project => `${project.name} ${project.client}`.toLowerCase().includes(query.toLowerCase()));
-  return <><Header title="Proyectos" sub={`${projects.length} proyectos`}><label className="search"><Search /><input aria-label="Buscar proyecto o cliente" placeholder="Buscar proyecto o cliente" value={query} onChange={e=>setQuery(e.target.value)}/></label><Button onClick={create}><Plus />Nuevo proyecto</Button></Header><Section>{projects.length ? <><div className="data-table projects-table"><div className="table-head"><span>Proyecto</span><span>Estado</span><span>Fechas</span><span>Cliente</span><span>Tipo</span><span /></div>{rows.map(project => <div className="table-row" key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><Status tone="info">{project.status}</Status><span>{project.start} — {project.end}</span><span>{project.client}</span><span>{project.type}</span><span>•••</span></div>)}</div><div className="table-foot"><span>Mostrando {rows.length} de {projects.length}</span></div></> : <EmptyState icon={FolderOpen} title="Sin proyectos cargados" text="Registra un proyecto real para comenzar a trabajar." action={<Button onClick={create}><Plus />Nuevo proyecto</Button>} />}</Section></>;
+  return <><Header title="Proyectos" sub={`${projects.length} proyectos`}><label className="search"><Search /><input aria-label="Buscar proyecto o cliente" placeholder="Buscar proyecto o cliente" value={query} onChange={e=>setQuery(e.target.value)}/></label><Button onClick={create}><Plus />Nuevo proyecto</Button></Header><Section>{projects.length ? <><div className="data-table projects-table"><div className="table-head"><span>Proyecto</span><span>Estado</span><span>Fechas</span><span>Cliente</span><span>Tipo</span><span /></div>{rows.map(project => <div className="table-row" key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><Status tone="info">{project.status}</Status><span>{project.start} — {project.end}</span><span>{project.client}</span><span>{project.type}</span><span><button className="icon-danger" aria-label={`Eliminar ${project.name}`} title="Eliminar proyecto" onClick={() => onDelete(project.id)}><Trash2 /></button></span></div>)}</div><div className="table-foot"><span>Mostrando {rows.length} de {projects.length}</span></div></> : <EmptyState icon={FolderOpen} title="Sin proyectos cargados" text="Registra un proyecto real para comenzar a trabajar." action={<Button onClick={create}><Plus />Nuevo proyecto</Button>} />}</Section></>;
 }
 
 function Findings({ findings, create }: { findings: Finding[]; create: () => void }) {
