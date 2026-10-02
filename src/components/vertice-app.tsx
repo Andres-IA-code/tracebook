@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
-  LayoutDashboard, Menu, Plus, Search, Settings, ShieldCheck, Upload, X,
+  LayoutDashboard, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -100,7 +100,7 @@ export function VerticeApp() {
       <div className="brand"><span className="brand-mark" />Vértice<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
       <button className="org-switcher" onClick={() => go("configuracion")}><span className="org-avatar">{initials(settings.organization || "Vértice")}</span><span><b>{settings.organization || "Mi consultora"}</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
       <nav aria-label="Navegación principal">{navItems.map(([key,label,Icon]) => <button key={key} className={cn("nav-item", view === key && "active")} onClick={() => go(key)}><Icon /><span>{label}</span></button>)}</nav>
-      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button><div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
+      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.verticeDesktop?.quit()}><LogOut /><span>Salir</span></button> : null}<div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
     </aside>
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div></div>
@@ -123,6 +123,15 @@ export function VerticeApp() {
 function initials(value: string) {
   return value.trim().split(/\s+/).slice(0, 2).map(part => part[0]?.toUpperCase() ?? "").join("") || "—";
 }
+
+declare global {
+  interface Window {
+    verticeDesktop?: { quit: () => void };
+  }
+}
+
+// "Salir" only makes sense in the installed desktop app; browsers block closing tabs.
+const isDesktopApp = typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent);
 
 function Dashboard({ data, counts, go, create, importRef, importData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; importRef: React.RefObject<HTMLInputElement | null>; importData: (file?: File) => void }) {
   const date = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
