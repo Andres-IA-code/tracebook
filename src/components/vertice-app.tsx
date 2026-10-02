@@ -111,7 +111,7 @@ export function VerticeApp() {
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => updateData({ ...data, authorizations })} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} />}
-        {view === "informes" && <Reports projects={data.projects} findings={data.findings} />}
+        {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} />}
         {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} />}
       </main>
@@ -163,23 +163,29 @@ function Library({ templates, create }: { templates: Template[]; create: () => v
 type ReportFormat = "pdf" | "docx" | "html" | "json";
 const SEV_ORDER = ["Crítica", "Critica", "Alta", "Media", "Baja", "Informativa"];
 
-function buildReportHtml(project: Project, list: Finding[]) {
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><rect width="44" height="44" rx="10" fill="#141414"/><path d="M22 9 35 33H9Z" fill="none" stroke="#ED7D27" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="#ED7D27"/></svg>`;
+
+function buildReportHtml(project: Project, list: Finding[], settings: SettingsState) {
   const esc = (s: string) => (s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
   const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
   const date = new Date().toLocaleDateString("es-AR");
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe — ${esc(project.name)}</title><style>body{font-family:Georgia,serif;max-width:760px;margin:40px auto;color:#141414;line-height:1.5}h1{font-size:24px;border-bottom:3px solid #D9641E;padding-bottom:8px}h2{font-size:17px;margin-top:28px;color:#41423A}h3{font-size:15px;margin:18px 0 4px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:13px}th{background:#ECE2D2}.f{border-left:3px solid #D9641E;padding-left:12px;margin-bottom:16px}pre{white-space:pre-wrap;font-family:inherit}</style></head><body>
+  const org = settings.organization || "Vértice";
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe — ${esc(project.name)}</title><style>body{font-family:Georgia,serif;max-width:760px;margin:40px auto;color:#141414;line-height:1.5}h1{font-size:24px;border-bottom:3px solid #D9641E;padding-bottom:8px}h2{font-size:17px;margin-top:28px;color:#41423A}h3{font-size:15px;margin:18px 0 4px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:13px}th{background:#ECE2D2}.f{border-left:3px solid #D9641E;padding-left:12px;margin-bottom:16px}pre{white-space:pre-wrap;font-family:inherit}.report-head{display:flex;align-items:center;gap:14px;margin-bottom:6px}.report-head .brand-name{font-size:20px;font-weight:bold;letter-spacing:.5px}.report-head .brand-sub{font-size:12px;color:#757575}.id-table td{border:none;padding:3px 10px 3px 0;font-size:13px}.id-table td:first-child{color:#757575;white-space:nowrap}.foot{margin-top:36px;border-top:1px solid #ccc;padding-top:8px;font-size:11px;color:#757575}</style></head><body>
+<div class="report-head">${LOGO_SVG}<div><div class="brand-name">${esc(org)}</div><div class="brand-sub">Informe de prueba de penetración${settings.userName ? ` · Emitido por ${esc(settings.userName)}${settings.role ? ` (${esc(settings.role)})` : ""}` : ""}${settings.email ? ` · ${esc(settings.email)}` : ""}</div></div></div>
 <h1>Informe de prueba de penetración</h1>
-<p><b>Proyecto:</b> ${esc(project.name)}<br><b>Cliente:</b> ${esc(project.client)}<br><b>Tipo:</b> ${esc(project.type)}<br><b>Período:</b> ${esc(project.start)} — ${esc(project.end)}<br><b>Fecha de emisión:</b> ${date}</p>
+<h2>Identificación del proyecto</h2>
+<table class="id-table"><tr><td>Proyecto</td><td><b>${esc(project.name)}</b></td></tr><tr><td>ID de proyecto</td><td>${esc(project.id)}</td></tr><tr><td>Cliente</td><td>${esc(project.client)}</td></tr><tr><td>Tipo de evaluación</td><td>${esc(project.type)}</td></tr><tr><td>Estado</td><td>${esc(project.status)}</td></tr><tr><td>Período de ejecución</td><td>${esc(project.start)} — ${esc(project.end)}</td></tr><tr><td>Fecha de emisión</td><td>${date}</td></tr></table>
 <h2>Resumen ejecutivo</h2><p>Se identificaron ${list.length} hallazgos durante la evaluación.</p>
 <table><tr><th>Severidad</th><th>Cantidad</th></tr>${counts.map(([s, n]) => `<tr><td>${esc(s)}</td><td>${n}</td></tr>`).join("")}</table>
 <h2>Detalle de hallazgos</h2>${list.map((f, i) => `<div class="f"><h3>${i + 1}. ${esc(f.title)}</h3><p><b>Severidad:</b> ${esc(f.severity)} · <b>Estado:</b> ${esc(f.status)}</p><pre>${esc(f.description || "Sin descripción")}</pre></div>`).join("")}
+<div class="foot">${esc(org)} · Informe generado con Vértice · ${date} · Documento confidencial</div>
 </body></html>`;
 }
 
-function generateReport(project: Project, findings: Finding[], format: ReportFormat) {
+function generateReport(project: Project, findings: Finding[], format: ReportFormat, settings: SettingsState) {
   const list = findings.filter(f => f.project === project.name)
     .sort((a, b) => SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity));
-  const html = buildReportHtml(project, list);
+  const html = buildReportHtml(project, list, settings);
   const base = `Informe-${project.name.replace(/[^\w\-]+/g, "_")}`;
   const download = (content: string, type: string, ext: string) => {
     const url = URL.createObjectURL(new Blob([content], { type }));
@@ -194,9 +200,9 @@ function generateReport(project: Project, findings: Finding[], format: ReportFor
   else download(JSON.stringify({ project, findings: list, generatedAt: new Date().toISOString() }, null, 2), "application/json", "json");
 }
 
-function Reports({ projects, findings }: { projects: Project[]; findings: Finding[] }) {
+function Reports({ projects, findings, settings }: { projects: Project[]; findings: Finding[]; settings: SettingsState }) {
   const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
-  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.project===project.name).length; const fmt = formats[project.id] ?? "pdf"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
+  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.project===project.name).length; const fmt = formats[project.id] ?? "pdf"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
 }
 
 function Clients({ clients, create }: { clients: Client[]; create: () => void }) {
