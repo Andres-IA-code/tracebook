@@ -163,6 +163,7 @@ h6,
 .table-row > svg { width: 19px; color: var(--muted-foreground); }
 .dashboard-table .table-head, .dashboard-table .table-row { grid-template-columns: 2fr 1.2fr 1.8fr 1fr 30px; }
 .projects-table .table-head, .projects-table .table-row { grid-template-columns: 2.2fr 1.2fr 1.4fr .8fr 1.1fr 30px; }
+.audit-table .table-head, .audit-table .table-row { grid-template-columns: 1.1fr 1fr .9fr 2.4fr; }
 .library-table .table-head, .library-table .table-row { grid-template-columns: 2.2fr 1fr .8fr 1.2fr .8fr; }
 .progress-cell { display: flex !important; flex-direction: row !important; align-items: center; gap: 12px; }
 .progress-cell > i { flex: 1; height: 6px; border-radius: 3px; background: var(--muted); overflow: hidden; }

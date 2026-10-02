@@ -23,6 +23,8 @@ const STORAGE_KEY = "vertice-workspace-data";
 const SETTINGS_KEY = "vertice-settings";
 const DEFAULT_SETTINGS: SettingsState = { organization: "", userName: "", email: "", role: "Responsable", timezone: "America/Argentina/Buenos_Aires", emailAlerts: true, reportAlerts: true };
 
+type AuditEntry = { id: string; at: string; user: string; action: "Importación" | "Exportación" | "Eliminación"; detail: string };
+const AUDIT_KEY = "vertice-audit";
 type Backup = { data: DataState; settings?: Partial<SettingsState> | undefined };
 function normalizeData(parsed: Partial<DataState>): DataState {
   const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] };
@@ -76,6 +78,13 @@ export function VerticeApp() {
   const [createKind, setCreateKind] = useState<CreateKind>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<Backup | null>(null);
+  const [audit, setAudit] = useState<AuditEntry[]>([]);
+  useEffect(() => { try { const a = JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]"); if (Array.isArray(a)) setAudit(a); } catch { /* ignore */ } }, []);
+  const log = (action: AuditEntry["action"], detail: string) => setAudit(current => {
+    const next = [{ id: crypto.randomUUID(), at: new Date().toISOString(), user: settings.userName || "Usuario sin nombre", action, detail }, ...current].slice(0, 500);
+    window.localStorage.setItem(AUDIT_KEY, JSON.stringify(next)); return next;
+  });
+  const doExport = () => { exportBackup(data, settings); log("Exportación", `Respaldo completo: ${data.projects.length} proyectos, ${data.findings.length} hallazgos, ${(data.authorizations ?? []).length} autorizaciones`); };
 
   useEffect(() => {
     window.localStorage.removeItem("vertice-theme");
@@ -121,6 +130,8 @@ export function VerticeApp() {
     } else {
       updateData(normalizeData({ projects: mergeById(data.projects, backup.data.projects), findings: mergeById(data.findings, backup.data.findings), clients: mergeById(data.clients, backup.data.clients), templates: mergeById(data.templates, backup.data.templates), authorizations: mergeById(data.authorizations ?? [], backup.data.authorizations) }));
     }
+    const b = backup.data;
+    log("Importación", `${mode === "replace" ? "Reemplazar todo" : "Combinar"}: ${b.projects.length} proyectos, ${b.findings.length} hallazgos, ${b.clients.length} clientes, ${b.templates.length} plantillas, ${b.authorizations.length} autorizaciones`);
     setPendingImport(null); confirm("Datos importados correctamente");
   };
   const deleteProject = (id: string) => {
@@ -129,6 +140,7 @@ export function VerticeApp() {
     const na = (data.authorizations ?? []).filter(a => a.projectId === id).length;
     if (!window.confirm(`¿Eliminar el proyecto "${p.name}"? También se eliminarán ${nf} hallazgo(s) y ${na} autorización(es) vinculados. Esta acción no se puede deshacer.`)) return;
     updateData({ ...data, projects: data.projects.filter(x => x.id !== id), findings: data.findings.filter(f => f.projectId !== id), authorizations: (data.authorizations ?? []).filter(a => a.projectId !== id) });
+    log("Eliminación", `Proyecto "${p.name}" con ${nf} hallazgo(s) y ${na} autorización(es)`);
     confirm("Proyecto eliminado");
   };
   const activeProjects = data.projects.filter(project => project.status !== "Entregado").length;
@@ -145,14 +157,14 @@ export function VerticeApp() {
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div></div>
       <main className="page">
-        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} exportData={() => exportBackup(data, settings)} />}
+        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} exportData={doExport} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
-        {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => updateData({ ...data, authorizations })} goProjects={() => go("proyectos")} notify={confirm} />}
+        {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} />}
-        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={() => exportBackup(data, settings)} />}
+        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
@@ -255,7 +267,7 @@ function Clients({ clients, create }: { clients: Client[]; create: () => void })
   return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section></>;
 }
 
-function SettingsPage({ settings, onSave, exportData }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void }) {
+function SettingsPage({ settings, onSave, exportData, audit }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; audit: AuditEntry[] }) {
   const [draft, setDraft] = useState(settings);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(draft); };
   const set = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => setDraft(current => ({ ...current, [key]: value }));
@@ -270,6 +282,7 @@ function SettingsPage({ settings, onSave, exportData }: { settings: SettingsStat
         <Button type="submit" size="lg"><Check />Guardar configuración</Button>
       </div>
     </form>
+    <Section title="Registro de auditoría" className="settings-section">{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "warning" : "info"}>{e.action}</Status><span>{e.detail}</span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las importaciones, exportaciones y eliminaciones." />}</Section>
   </>;
 }
 
