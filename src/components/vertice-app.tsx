@@ -15,13 +15,22 @@ type Finding = { id: string; title: string; severity: string; status: string; pr
 type Client = { id: string; name: string; industry: string; contact: string; email: string };
 type Template = { id: string; title: string; cwe: string; category: string; severity: string };
 type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; templates: Template[]; authorizations: Authorization[] };
-type SettingsState = { organization: string; userName: string; email: string; role: string; timezone: string; emailAlerts: boolean; reportAlerts: boolean };
+type SettingsState = {
+  organization: string; userName: string; email: string; role: string; timezone: string;
+  emailAlerts: boolean; reportAlerts: boolean;
+  latexLogo: string; latexPrimaryColor: string; latexTextColor: string; latexSecondaryColor: string;
+  teamPhone: string; teamWebsite: string; teamAddress: string;
+};
 type CreateKind = "project" | "finding" | "client" | "template" | null;
 
 const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [] };
 const STORAGE_KEY = "vertice-workspace-data";
 const SETTINGS_KEY = "vertice-settings";
-const DEFAULT_SETTINGS: SettingsState = { organization: "", userName: "", email: "", role: "Responsable", timezone: "America/Argentina/Buenos_Aires", emailAlerts: true, reportAlerts: true };
+const DEFAULT_SETTINGS: SettingsState = {
+  organization: "", userName: "", email: "", role: "Responsable", timezone: "America/Argentina/Buenos_Aires",
+  emailAlerts: true, reportAlerts: true, latexLogo: "", latexPrimaryColor: "#D9641E",
+  latexTextColor: "#141414", latexSecondaryColor: "#757575", teamPhone: "", teamWebsite: "", teamAddress: "",
+};
 
 type AuditEntry = { id: string; at: string; user: string; action: "Importación" | "Exportación" | "Eliminación"; detail: string };
 const AUDIT_KEY = "vertice-audit";
@@ -293,31 +302,47 @@ function buildReportLatex(project: Project, list: Finding[], settings: SettingsS
   const date = new Date().toLocaleDateString("es-AR");
   const org = t(settings.organization || "Vértice");
   const issuer = settings.userName ? `Emitido por ${t(settings.userName)}${settings.role ? ` (${t(settings.role)})` : ""}${settings.email ? ` \\textperiodcentered{} ${t(settings.email)}` : ""}` : "";
+  const color = (value: string, fallback: string) => /^#[0-9a-f]{6}$/i.test(value) ? value.slice(1).toUpperCase() : fallback;
+  const primary = color(settings.latexPrimaryColor, "D9641E");
+  const text = color(settings.latexTextColor, "141414");
+  const secondary = color(settings.latexSecondaryColor, "757575");
+  const contacts = [settings.teamPhone, settings.teamWebsite, settings.teamAddress].filter(Boolean).map(t);
+  const logoMatch = settings.latexLogo.match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=]+)$/);
+  const logoExtension = logoMatch?.[1] === "jpeg" ? "jpg" : "png";
+  const embeddedLogo = logoMatch ? `\\directlua{
+local b="${logoMatch[2]}"
+local a="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+local d=b:gsub("[^"..a.."=]",""):gsub(".",function(x) if x=="=" then return "" end local r="" local f=a:find(x,1,true)-1 for i=6,1,-1 do r=r..(math.fmod(f,2^i)-math.fmod(f,2^(i-1))>0 and "1" or "0") end return r end):gsub("[01][01][01][01][01][01][01][01]",function(x) local c=0 for i=1,8 do c=c+(x:sub(i,i)=="1" and 2^(8-i) or 0) end return string.char(c) end)
+local f=assert(io.open("vertice-team-logo.${logoExtension}","wb")) f:write(d) f:close()
+}
+` : "";
+  const logo = logoMatch
+    ? `\\includegraphics[width=1.1cm,height=1.1cm,keepaspectratio]{vertice-team-logo.${logoExtension}}`
+    : `\\begin{tikzpicture}[baseline=-4pt]
+  \\fill[vdark] (0,0) rectangle (1.1,1.1);
+  \\draw[vorange,line width=1.4pt,line join=round] (0.55,0.88) -- (0.88,0.25) -- (0.22,0.25) -- cycle;
+  \\fill[vorange] (0.55,0.88) circle (0.08);
+\\end{tikzpicture}`;
   return `\\documentclass[11pt,a4paper]{article}
 \\usepackage[utf8]{inputenc}
 \\usepackage[T1]{fontenc}
 \\usepackage[spanish]{babel}
 \\usepackage[margin=2.5cm]{geometry}
-\\usepackage{xcolor,booktabs,tikz,fancyhdr,titlesec}
-\\definecolor{vorange}{HTML}{D9641E}
-\\definecolor{vdark}{HTML}{141414}
-\\definecolor{vgray}{HTML}{757575}
+\\usepackage{xcolor,booktabs,tikz,fancyhdr,titlesec,graphicx}
+\\definecolor{vorange}{HTML}{${primary}}
+\\definecolor{vdark}{HTML}{${text}}
+\\definecolor{vgray}{HTML}{${secondary}}
 \\titleformat{\\section}{\\Large\\bfseries\\color{vdark}}{}{0pt}{}[\\color{vorange}\\titlerule]
 \\pagestyle{fancy}\\fancyhf{}
 \\lfoot{\\footnotesize\\color{vgray} ${org} \\textperiodcentered{} Documento confidencial}
 \\rfoot{\\footnotesize\\color{vgray} \\thepage}
 \\renewcommand{\\headrulewidth}{0pt}
 
-\\begin{document}
-
-\\noindent\\begin{tikzpicture}[baseline=-4pt]
-  \\fill[vdark] (0,0) rectangle (1.1,1.1);
-  \\draw[vorange,line width=1.4pt,line join=round] (0.55,0.88) -- (0.88,0.25) -- (0.22,0.25) -- cycle;
-  \\fill[vorange] (0.55,0.88) circle (0.08);
-\\end{tikzpicture}\\hspace{0.4cm}%
+${embeddedLogo}\\begin{document}
+\\noindent${logo}\\hspace{0.4cm}%
 \\begin{minipage}[c]{0.8\\textwidth}
 {\\Large\\bfseries ${org}}\\\\
-{\\small\\color{vgray} Informe de prueba de penetración${issuer ? ` \\textperiodcentered{} ${issuer}` : ""}}
+{\\small\\color{vgray} Informe de prueba de penetración${issuer ? ` \\textperiodcentered{} ${issuer}` : ""}${contacts.length ? `\\\\${contacts.join(" \\textperiodcentered{} ")}` : ""}}
 \\end{minipage}
 
 \\vspace{1cm}
@@ -355,7 +380,7 @@ ${list.map((f, i) => `\\subsection*{${i + 1}. ${t(f.title)}}
 ${multi(f.description || "Sin descripción")}
 `).join("\n")}
 \\vfill
-{\\footnotesize\\color{vgray} ${org} \\textperiodcentered{} Informe generado con Vértice \\textperiodcentered{} ${date} \\textperiodcentered{} Documento confidencial}
+{\\footnotesize\\color{vgray} ${org}${contacts.length ? ` \\textperiodcentered{} ${contacts.join(" \\textperiodcentered{} ")}` : ""} \\textperiodcentered{} ${date} \\textperiodcentered{} Documento confidencial}
 
 \\end{document}
 `;
@@ -391,14 +416,28 @@ function Clients({ clients, create, onDelete }: { clients: Client[]; create: () 
 
 function SettingsPage({ settings, onSave, exportData, importRef, importData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; importRef: React.RefObject<HTMLInputElement | null>; importData: (file?: File) => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
   const [draft, setDraft] = useState(settings);
+  const logoRef = useRef<HTMLInputElement>(null);
   useEffect(() => setDraft(settings), [settings]);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(draft); };
   const set = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => setDraft(current => ({ ...current, [key]: value }));
+  const loadLogo = (file?: File) => {
+    if (!file) return;
+    if (!/^image\/(png|jpeg)$/.test(file.type) || file.size > 1024 * 1024) { window.alert("Usa una imagen PNG o JPG de hasta 1 MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => { if (typeof reader.result === "string") set("latexLogo", reader.result); };
+    reader.readAsDataURL(file);
+  };
   return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><input ref={importRef} hidden type="file" accept="application/json,.json" onChange={event => importData(event.target.files?.[0])}/><Button type="button" variant="outline" onClick={() => importRef.current?.click()}><Download />Importar datos</Button><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
     <form className="settings-layout" onSubmit={submit}>
       <div className="stack">
         <Section title="Consultora" className="settings-section"><Field label="Nombre de la consultora" name="organization" value={draft.organization} required onChange={value => set("organization", value)} /><p className="field-help">Este nombre se muestra en la navegación y en los informes.</p></Section>
         <Section title="Perfil" className="settings-section"><div className="form-grid"><Field label="Nombre completo" name="userName" value={draft.userName} required onChange={value => set("userName", value)} /><Field label="Correo electrónico" name="email" type="email" value={draft.email} required onChange={value => set("email", value)} /><SelectField label="Rol" name="role" options={["Responsable","Pentester","Revisor"]} value={draft.role} onChange={value => set("role", value)} /><SelectField label="Zona horaria" name="timezone" options={["America/Argentina/Buenos_Aires","America/Bogota","America/Santiago","America/Mexico_City","Europe/Madrid"]} value={draft.timezone} onChange={value => set("timezone", value)} /></div></Section>
+        <Section title="Plantilla LaTeX" className="settings-section">
+          <div className="latex-logo-row"><div className="latex-logo-preview">{draft.latexLogo ? <img src={draft.latexLogo} alt="Logotipo del equipo" /> : <span className="brand-mark" />}</div><div><b>Logotipo del equipo</b><small>PNG o JPG, hasta 1 MB. Se incluirá dentro del archivo .tex.</small><div className="latex-logo-actions"><input ref={logoRef} hidden type="file" accept="image/png,image/jpeg" onChange={event => { loadLogo(event.target.files?.[0]); event.target.value = ""; }} /><Button type="button" variant="outline" size="sm" onClick={() => logoRef.current?.click()}><Upload />{draft.latexLogo ? "Cambiar" : "Cargar"}</Button>{draft.latexLogo ? <Button type="button" variant="ghost" size="sm" onClick={() => set("latexLogo", "")}><Trash2 />Quitar</Button> : null}</div></div></div>
+          <div className="latex-color-grid"><ColorField label="Color principal" value={draft.latexPrimaryColor} onChange={value => set("latexPrimaryColor", value)} /><ColorField label="Color de texto" value={draft.latexTextColor} onChange={value => set("latexTextColor", value)} /><ColorField label="Color secundario" value={draft.latexSecondaryColor} onChange={value => set("latexSecondaryColor", value)} /></div>
+          <div className="form-grid latex-contact-grid"><Field label="Teléfono del equipo" name="teamPhone" type="tel" value={draft.teamPhone} onChange={value => set("teamPhone", value)} /><Field label="Sitio web" name="teamWebsite" type="url" placeholder="https://" value={draft.teamWebsite} onChange={value => set("teamWebsite", value)} /><Field label="Dirección" name="teamAddress" value={draft.teamAddress} onChange={value => set("teamAddress", value)} /></div>
+          <p className="field-help">Los campos vacíos no aparecerán en el informe. Con un logotipo personalizado, compila el archivo con LuaLaTeX.</p>
+        </Section>
       </div>
       <div className="stack">
         <Section title="Notificaciones" className="settings-section"><div className="setting-row"><span><b>Alertas por correo</b><small>Recibe avisos sobre autorizaciones y hallazgos.</small></span><label className="switch"><input type="checkbox" checked={draft.emailAlerts} onChange={event => set("emailAlerts", event.target.checked)} /><i /></label></div><div className="setting-row"><span><b>Informes listos</b><small>Recibe un aviso cuando un informe esté disponible.</small></span><label className="switch"><input type="checkbox" checked={draft.reportAlerts} onChange={event => set("reportAlerts", event.target.checked)} /><i /></label></div></Section>
@@ -432,3 +471,4 @@ function CreateDialog({ kind, projects, templates = [], onClose, onSave }: { kin
 }
 function Field({label,name,type="text",required,placeholder,value,onChange}:{label:string;name:string;type?:string;required?:boolean;placeholder?:string;value?:string;onChange?:(value:string)=>void}) { return <label className="form-field">{label}<input name={name} type={type} required={required} placeholder={placeholder} value={value} onChange={onChange ? event => onChange(event.target.value) : undefined}/></label>; }
 function SelectField({label,name,options,empty,value,onChange}:{label:string;name:string;options:string[];empty?:string;value?:string;onChange?:(value:string)=>void}) { return <label className="form-field">{label}<select name={name} value={value} onChange={onChange ? event => onChange(event.target.value) : undefined}>{empty ? <option value="">{empty}</option> : null}{options.map(option=><option key={option}>{option}</option>)}</select></label>; }
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="form-field color-field">{label}<span><input type="color" value={value} onChange={event => onChange(event.target.value.toUpperCase())} /><input aria-label={`${label} hexadecimal`} value={value} maxLength={7} pattern="#[0-9A-Fa-f]{6}" onChange={event => onChange(event.target.value)} /></span></label>; }
