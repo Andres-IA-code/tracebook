@@ -85,6 +85,9 @@ export function VerticeApp() {
     window.localStorage.setItem(AUDIT_KEY, JSON.stringify(next)); return next;
   });
   const doExport = () => { exportBackup(data, settings); log("Exportación", `Respaldo completo: ${data.projects.length} proyectos, ${data.findings.length} hallazgos, ${(data.authorizations ?? []).length} autorizaciones`); };
+  const saveAudit = (next: AuditEntry[]) => { setAudit(next); window.localStorage.setItem(AUDIT_KEY, JSON.stringify(next)); };
+  const deleteAuditEntry = (id: string) => saveAudit(audit.filter(e => e.id !== id));
+  const clearAudit = () => { if (window.confirm("¿Borrar todo el registro de auditoría? Esta acción no se puede deshacer.")) saveAudit([]); };
 
   useEffect(() => {
     window.localStorage.removeItem("vertice-theme");
@@ -172,7 +175,7 @@ export function VerticeApp() {
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); if (t) log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
-        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} />}
+        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
