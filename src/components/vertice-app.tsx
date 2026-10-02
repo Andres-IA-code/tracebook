@@ -202,6 +202,15 @@ export function VerticeApp() {
         <p><b>Reemplazar todo:</b> <AlertTriangle style={{display:"inline",width:14,height:14}} /> se perderán todos los datos actuales{pendingImport.settings ? " y se restaurará la configuración del respaldo" : ""}.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingImport(null)}>Cancelar</Button><Button type="button" variant="outline" onClick={() => { if (window.confirm("Se perderán todos los datos actuales. ¿Continuar?")) applyImport(pendingImport, "replace"); }}>Reemplazar todo</Button><Button type="button" onClick={() => applyImport(pendingImport, "merge")}>Combinar</Button></div>
       </form></section></div> : null}
+    {pendingAuditDelete ? (() => { const entry = pendingAuditDelete === "all" ? null : audit.find(e => e.id === pendingAuditDelete); return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingAuditDelete(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="audit-title">
+      <div className="modal-head"><div><small>Registro de auditoría</small><h2 id="audit-title">{pendingAuditDelete === "all" ? "Borrar todo el registro" : "Eliminar registro"}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingAuditDelete(null)}><X /></Button></div>
+      <form onSubmit={event => { event.preventDefault(); applyAuditDelete(); }}>
+        {pendingAuditDelete === "all"
+          ? <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrarán los {audit.length} registro(s) del historial de auditoría: importaciones, exportaciones y eliminaciones registradas hasta ahora.</p>
+          : <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se eliminará este registro: <b>{entry ? `${entry.action} — ${entry.detail}` : "registro seleccionado"}</b>.</p>}
+        <p>Esta acción no se puede deshacer y no queda registrada en el historial.</p>
+        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingAuditDelete(null)}>Cancelar</Button><Button type="submit"><Trash2 />{pendingAuditDelete === "all" ? "Borrar todo" : "Eliminar"}</Button></div>
+      </form></section></div>; })() : null}
     {pendingReset ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingReset(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="reset-title">
       <div className="modal-head"><div><small>Configuración</small><h2 id="reset-title">Restablecer configuración</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingReset(false)}><X /></Button></div>
       <form onSubmit={event => { event.preventDefault(); applyResetSettings(); }}>
