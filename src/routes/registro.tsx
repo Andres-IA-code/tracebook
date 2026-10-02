@@ -11,9 +11,9 @@ export const Route = createFileRoute("/registro")({
   head: () => ({
     meta: [
       { title: "Crear cuenta — Vértice" },
-      { name: "description", content: "Crea tu cuenta de Vértice y gestiona tus pentests de principio a fin." },
+      { name: "description", content: "Crea tu cuenta de Vértice y gestiona tus pentest de principio a fin." },
       { property: "og:title", content: "Crear cuenta — Vértice" },
-      { property: "og:description", content: "Crea tu cuenta y empieza a gestionar pentests." },
+      { property: "og:description", content: "Crea tu cuenta y empieza a gestionar pentest." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -49,7 +49,7 @@ function RegisterPage() {
   );
 
   return (
-    <AuthShell code="Registro · 02" title="Crear cuenta" intro="Empieza a gestionar tus pentests." foot={<>¿Ya tienes cuenta? <Link to="/login">Iniciar sesión</Link></>}>
+    <AuthShell code="Registro · 02" title="Crear cuenta" intro="Empieza a gestionar tus pentest." foot={<>¿Ya tienes cuenta? <Link to="/login">Iniciar sesión</Link></>}>
       <form className="pub-form" onSubmit={submit}>
         <label>Correo<Input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} /></label>
         <label>Contraseña<Input type="password" autoComplete="new-password" minLength={6} required value={password} onChange={e => setPassword(e.target.value)} /></label>
