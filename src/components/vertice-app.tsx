@@ -183,7 +183,7 @@ export function VerticeApp() {
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); if (t) log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
-        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
+        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} importRef={importRef} importData={importData} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
@@ -219,10 +219,10 @@ declare global {
 // "Salir" only makes sense in the installed desktop app; browsers block closing tabs.
 const isDesktopApp = typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent);
 
-function Dashboard({ data, counts, go, create, importRef, importData, exportData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; importRef: React.RefObject<HTMLInputElement | null>; importData: (file?: File) => void; exportData: () => void }) {
+function Dashboard({ data, counts, go, create, exportData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; exportData: () => void }) {
   const date = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
   const metrics = [["Proyectos activos",counts[0],FolderOpen],["Hallazgos abiertos",counts[1],Bug],["Críticos",counts[2],AlertTriangle],["Informes por entregar",counts[3],FileText]] as const;
-  return <><Header title="Panel" sub={date.charAt(0).toUpperCase()+date.slice(1)}><input ref={importRef} hidden type="file" accept="application/json,.json" onChange={event => importData(event.target.files?.[0])}/><Button variant="outline" onClick={() => importRef.current?.click()}><Download />Importar datos</Button><Button variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
+  return <><Header title="Panel" sub={date.charAt(0).toUpperCase()+date.slice(1)}><Button variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
     <div className="metric-grid">{metrics.map(([label,value,Icon]) => <div className="metric" key={label}><span><Icon />{label}</span><strong>{value}</strong></div>)}</div>
     <Section title="Proyectos en curso" action={data.projects.length ? <button className="text-link" onClick={() => go("proyectos")}>Ver todos</button> : null}>{data.projects.length ? <div className="data-table dashboard-table"><div className="table-head"><span>Proyecto</span><span>Tipo</span><span>Estado</span><span>Cliente</span><span /></div>{data.projects.slice(0,5).map(project => <button className="table-row" key={project.id} onClick={() => go("proyectos")}><span><b>{project.name}</b><small>{project.start} — {project.end}</small></span><span>{project.type}</span><Status tone="info">{project.status}</Status><span>{project.client}</span><span>→</span></button>)}</div> : <EmptyState icon={FolderOpen} title="Todavía no hay proyectos" text="Crea el primero o importa un archivo con tus datos." action={<Button onClick={create}><Plus />Crear proyecto</Button>} />}</Section>
   </>;
