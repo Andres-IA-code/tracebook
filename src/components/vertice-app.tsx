@@ -78,6 +78,7 @@ export function VerticeApp() {
   const [createKind, setCreateKind] = useState<CreateKind>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<Backup | null>(null);
+  const [pendingReset, setPendingReset] = useState(false);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   useEffect(() => { try { const a = JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]"); if (Array.isArray(a)) setAudit(a); } catch { /* ignore */ } }, []);
   const log = (action: AuditEntry["action"], detail: string) => setAudit(current => {
@@ -107,8 +108,9 @@ export function VerticeApp() {
 
   const updateData = (next: DataState) => { setData(next); window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); };
   const updateSettings = (next: SettingsState) => { setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); confirm("Configuración guardada"); };
-  const resetSettings = () => {
-    if (!window.confirm("¿Borrar la configuración ingresada? Volverá a los valores predeterminados. Los datos cargados (proyectos, hallazgos, etc.) no se borran.")) return;
+  const resetSettings = () => setPendingReset(true);
+  const applyResetSettings = () => {
+    setPendingReset(false);
     log("Eliminación", "Configuración restablecida a los valores predeterminados");
     setSettings(DEFAULT_SETTINGS);
     window.localStorage.removeItem(SETTINGS_KEY);
@@ -193,6 +195,13 @@ export function VerticeApp() {
         <p><b>Combinar:</b> añade los registros nuevos y no duplica los que tienen el mismo identificador.</p>
         <p><b>Reemplazar todo:</b> <AlertTriangle style={{display:"inline",width:14,height:14}} /> se perderán todos los datos actuales{pendingImport.settings ? " y se restaurará la configuración del respaldo" : ""}.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingImport(null)}>Cancelar</Button><Button type="button" variant="outline" onClick={() => { if (window.confirm("Se perderán todos los datos actuales. ¿Continuar?")) applyImport(pendingImport, "replace"); }}>Reemplazar todo</Button><Button type="button" onClick={() => applyImport(pendingImport, "merge")}>Combinar</Button></div>
+      </form></section></div> : null}
+    {pendingReset ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingReset(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="reset-title">
+      <div className="modal-head"><div><small>Configuración</small><h2 id="reset-title">Restablecer configuración</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingReset(false)}><X /></Button></div>
+      <form onSubmit={event => { event.preventDefault(); applyResetSettings(); }}>
+        <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrará la configuración ingresada (consultora, perfil y notificaciones) y todo volverá a los valores predeterminados.</p>
+        <p>Los datos cargados (proyectos, hallazgos, autorizaciones, clientes y plantillas) <b>no se borran</b>. Esta acción quedará registrada en el registro de auditoría.</p>
+        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingReset(false)}>Cancelar</Button><Button type="submit"><RotateCcw />Restablecer</Button></div>
       </form></section></div> : null}
     {notice ? <div className="toast"><Check />{notice}</div> : null}
   </div>;
