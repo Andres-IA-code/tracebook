@@ -172,18 +172,10 @@ export function VerticeApp() {
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); if (t) log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
-        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} importRef={importRef} importData={importData} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
+        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
-    {pendingImport ? <div className="modal-backdrop" role="presentation"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
-      <div className="modal-head"><div><small>Importar datos</small><h2 id="import-title">Ya tenés datos cargados</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingImport(null)}><X /></Button></div>
-      <form onSubmit={e => e.preventDefault()}>
-        <p>El archivo contiene {pendingImport.data.projects.length} proyectos, {pendingImport.data.findings.length} hallazgos, {pendingImport.data.clients.length} clientes, {pendingImport.data.templates.length} plantillas y {pendingImport.data.authorizations.length} autorizaciones. ¿Cómo querés importarlo?</p>
-        <p><b>Combinar:</b> añade los registros nuevos y no duplica los que tienen el mismo identificador.</p>
-        <p><b>Reemplazar todo:</b> <AlertTriangle style={{display:"inline",width:14,height:14}} /> se perderán todos los datos actuales{pendingImport.settings ? " y se restaurará la configuración del respaldo" : ""}.</p>
-        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingImport(null)}>Cancelar</Button><Button type="button" variant="outline" onClick={() => { if (window.confirm("Se perderán todos los datos actuales. ¿Continuar?")) applyImport(pendingImport, "replace"); }}>Reemplazar todo</Button><Button type="button" onClick={() => applyImport(pendingImport, "merge")}>Combinar</Button></div>
-      </form></section></div> : null}
     {pendingAuditDelete ? (() => { const entry = pendingAuditDelete === "all" ? null : audit.find(e => e.id === pendingAuditDelete); return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingAuditDelete(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="audit-title">
       <div className="modal-head"><div><small>Registro de auditoría</small><h2 id="audit-title">{pendingAuditDelete === "all" ? "Borrar todo el registro" : "Eliminar registro"}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingAuditDelete(null)}><X /></Button></div>
       <form onSubmit={event => { event.preventDefault(); applyAuditDelete(); }}>
@@ -387,7 +379,7 @@ function Clients({ clients, create, onDelete }: { clients: Client[]; create: () 
   return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span><span><button className="icon-danger" aria-label={`Eliminar ${client.name}`} title="Eliminar cliente" onClick={() => del(client)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section></>;
 }
 
-function SettingsPage({ settings, onSave, exportData, importRef, importData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; importRef: React.RefObject<HTMLInputElement | null>; importData: (file?: File) => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
+function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
   const [draft, setDraft] = useState(settings);
   const logoRef = useRef<HTMLInputElement>(null);
   useEffect(() => setDraft(settings), [settings]);
@@ -400,7 +392,7 @@ function SettingsPage({ settings, onSave, exportData, importRef, importData, aud
     reader.onload = () => { if (typeof reader.result === "string") set("latexLogo", reader.result); };
     reader.readAsDataURL(file);
   };
-  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><input ref={importRef} hidden type="file" accept="application/json,.json" onChange={event => importData(event.target.files?.[0])}/><Button type="button" variant="outline" onClick={() => importRef.current?.click()}><Download />Importar datos</Button><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
+  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
     <form className="settings-layout" onSubmit={submit}>
       <div className="stack">
         <Section title="Consultora" className="settings-section"><Field label="Nombre de la consultora" name="organization" value={draft.organization} required onChange={value => set("organization", value)} /><p className="field-help">Este nombre se muestra en la navegación y en los informes.</p></Section>
