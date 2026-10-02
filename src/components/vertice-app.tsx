@@ -286,6 +286,81 @@ function buildReportHtml(project: Project, list: Finding[], settings: SettingsSt
 </body></html>`;
 }
 
+function buildReportLatex(project: Project, list: Finding[], settings: SettingsState) {
+  const t = (s: string) => (s ?? "").replace(/[\\{}&%$#_^~]/g, c => ({ "\\": "\\textbackslash{}", "{": "\\{", "}": "\\}", "&": "\\&", "%": "\\%", "$": "\\$", "#": "\\#", "_": "\\_", "^": "\\textasciicircum{}", "~": "\\textasciitilde{}" }[c]!));
+  const multi = (s: string) => t(s).split(/\n{2,}/).map(p => p.replace(/\n/g, "\\\\\n")).join("\n\n");
+  const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
+  const date = new Date().toLocaleDateString("es-AR");
+  const org = t(settings.organization || "Vértice");
+  const issuer = settings.userName ? `Emitido por ${t(settings.userName)}${settings.role ? ` (${t(settings.role)})` : ""}${settings.email ? ` \\textperiodcentered{} ${t(settings.email)}` : ""}` : "";
+  return `\\documentclass[11pt,a4paper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage[spanish]{babel}
+\\usepackage[margin=2.5cm]{geometry}
+\\usepackage{xcolor,booktabs,tikz,fancyhdr,titlesec}
+\\definecolor{vorange}{HTML}{D9641E}
+\\definecolor{vdark}{HTML}{141414}
+\\definecolor{vgray}{HTML}{757575}
+\\titleformat{\\section}{\\Large\\bfseries\\color{vdark}}{}{0pt}{}[\\color{vorange}\\titlerule]
+\\pagestyle{fancy}\\fancyhf{}
+\\lfoot{\\footnotesize\\color{vgray} ${org} \\textperiodcentered{} Documento confidencial}
+\\rfoot{\\footnotesize\\color{vgray} \\thepage}
+\\renewcommand{\\headrulewidth}{0pt}
+
+\\begin{document}
+
+\\noindent\\begin{tikzpicture}[baseline=-4pt]
+  \\fill[vdark] (0,0) rectangle (1.1,1.1);
+  \\draw[vorange,line width=1.4pt,line join=round] (0.55,0.88) -- (0.88,0.25) -- (0.22,0.25) -- cycle;
+  \\fill[vorange] (0.55,0.88) circle (0.08);
+\\end{tikzpicture}\\hspace{0.4cm}%
+\\begin{minipage}[c]{0.8\\textwidth}
+{\\Large\\bfseries ${org}}\\\\
+{\\small\\color{vgray} Informe de prueba de penetración${issuer ? ` \\textperiodcentered{} ${issuer}` : ""}}
+\\end{minipage}
+
+\\vspace{1cm}
+{\\Huge\\bfseries Informe de prueba de penetración}\\par
+{\\color{vorange}\\rule{\\textwidth}{2pt}}
+
+\\section*{Identificación del proyecto}
+\\begin{tabular}{@{}ll@{}}
+{\\color{vgray}Proyecto} & \\textbf{${t(project.name)}} \\\\
+{\\color{vgray}ID de proyecto} & \\texttt{${t(project.id)}} \\\\
+{\\color{vgray}Cliente} & ${t(project.client)} \\\\
+{\\color{vgray}Tipo de evaluación} & ${t(project.type)} \\\\
+{\\color{vgray}Estado} & ${t(project.status)} \\\\
+{\\color{vgray}Período de ejecución} & ${t(project.start)} --- ${t(project.end)} \\\\
+{\\color{vgray}Fecha de emisión} & ${date} \\\\
+\\end{tabular}
+
+\\section*{Resumen ejecutivo}
+Se identificaron ${list.length} hallazgos durante la evaluación.
+
+\\begin{center}
+\\begin{tabular}{lr}
+\\toprule
+\\textbf{Severidad} & \\textbf{Cantidad} \\\\
+\\midrule
+${counts.map(([s, n]) => `${t(s)} & ${n} \\\\`).join("\n")}
+\\bottomrule
+\\end{tabular}
+\\end{center}
+
+\\section*{Detalle de hallazgos}
+${list.map((f, i) => `\\subsection*{${i + 1}. ${t(f.title)}}
+\\textbf{Severidad:} ${t(f.severity)} \\quad \\textbf{Estado:} ${t(f.status)}
+
+${multi(f.description || "Sin descripción")}
+`).join("\n")}
+\\vfill
+{\\footnotesize\\color{vgray} ${org} \\textperiodcentered{} Informe generado con Vértice \\textperiodcentered{} ${date} \\textperiodcentered{} Documento confidencial}
+
+\\end{document}
+`;
+}
+
 function generateReport(project: Project, findings: Finding[], format: ReportFormat, settings: SettingsState) {
   const list = findings.filter(f => f.projectId === project.id)
     .sort((a, b) => SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity));
@@ -296,7 +371,8 @@ function generateReport(project: Project, findings: Finding[], format: ReportFor
     const a = document.createElement("a"); a.href = url; a.download = `${base}.${ext}`; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  if (format === "pdf") {
+  if (format === "latex") download(buildReportLatex(project, list, settings), "application/x-tex", "tex");
+  else if (format === "pdf") {
     printHtml(html);
   } else if (format === "docx") download("\ufeff" + html, "application/msword", "doc");
   else if (format === "html") download(html, "text/html", "html");
