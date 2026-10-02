@@ -43,6 +43,7 @@ function normalizeData(parsed: Partial<DataState>): DataState {
     return p ? { ...f, projectId: p.id } : f;
   });
   return next;
+}
 function exportBackup(data: DataState, settings: SettingsState) {
   const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: "Vértice" }, null, 2);
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
