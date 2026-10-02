@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Trash2, Upload, X,
+  LayoutDashboard, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Trash2, Upload, Download, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { printHtml } from "@/lib/print-html";
 import { Authorizations, type Authorization } from "@/components/authorizations";
 
 type View = "panel" | "proyectos" | "autorizaciones" | "hallazgos" | "biblioteca" | "informes" | "clientes" | "configuracion";
 type Project = { id: string; name: string; client: string; type: string; status: string; start: string; end: string };
-type Finding = { id: string; title: string; severity: string; status: string; project: string; description: string };
+type Finding = { id: string; title: string; severity: string; status: string; project: string; projectId?: string; description: string };
 type Client = { id: string; name: string; industry: string; contact: string; email: string };
 type Template = { id: string; title: string; cwe: string; category: string; severity: string };
 type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; templates: Template[]; authorizations: Authorization[] };
@@ -21,6 +22,25 @@ const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templat
 const STORAGE_KEY = "vertice-workspace-data";
 const SETTINGS_KEY = "vertice-settings";
 const DEFAULT_SETTINGS: SettingsState = { organization: "", userName: "", email: "", role: "Responsable", timezone: "America/Argentina/Buenos_Aires", emailAlerts: true, reportAlerts: true };
+
+type Backup = { data: DataState; settings?: Partial<SettingsState> };
+function normalizeData(parsed: Partial<DataState>): DataState {
+  const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] };
+  if (![next.projects, next.findings, next.clients, next.templates, next.authorizations].every(Array.isArray)) throw new Error("formato");
+  next.findings = next.findings.map(f => {
+    if (f.projectId) { const p = next.projects.find(x => x.id === f.projectId); return p ? { ...f, project: p.name } : f; }
+    const p = f.project ? next.projects.find(x => x.name === f.project) : undefined;
+    return p ? { ...f, projectId: p.id } : f;
+  });
+  return next;
+}
+function mergeById<T extends { id: string }>(a: T[], b: T[]) { const ids = new Set(a.map(x => x.id)); return [...a, ...b.filter(x => !ids.has(x.id))]; }
+function exportBackup(data: DataState, settings: SettingsState) {
+  const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: "Vértice" }, null, 2);
+  const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
+  const a = document.createElement("a"); a.href = url; a.download = `vertice-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 const navItems = [
   ["panel", "Panel", LayoutDashboard], ["proyectos", "Proyectos", FolderOpen],
@@ -55,6 +75,7 @@ export function VerticeApp() {
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [createKind, setCreateKind] = useState<CreateKind>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const [pendingImport, setPendingImport] = useState<Backup | null>(null);
 
   useEffect(() => {
     window.localStorage.removeItem("vertice-theme");
@@ -62,7 +83,7 @@ export function VerticeApp() {
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData) as Partial<DataState>;
-        setData({ projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] });
+        setData(normalizeData(parsed));
       } catch { window.localStorage.removeItem(STORAGE_KEY); }
     }
     const savedSettings = window.localStorage.getItem(SETTINGS_KEY);
@@ -85,12 +106,30 @@ export function VerticeApp() {
   const importData = async (file?: File) => {
     if (!file) return;
     try {
-      const parsed = JSON.parse(await file.text()) as Partial<DataState>;
-      const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] };
-      if (![next.projects, next.findings, next.clients, next.templates, next.authorizations].every(Array.isArray)) throw new Error();
-      updateData(next); confirm("Datos importados correctamente");
+      const parsed = JSON.parse(await file.text()) as Partial<DataState> & { settings?: Partial<SettingsState> };
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
+      const backup: Backup = { data: normalizeData(parsed), settings: parsed.settings && typeof parsed.settings === "object" ? parsed.settings : undefined };
+      const hasData = Object.values(data).some(list => list.length > 0);
+      if (hasData) setPendingImport(backup); else applyImport(backup, "replace");
     } catch { confirm("El archivo no tiene un formato válido"); }
     if (importRef.current) importRef.current.value = "";
+  };
+  const applyImport = (backup: Backup, mode: "merge" | "replace") => {
+    if (mode === "replace") {
+      updateData(backup.data);
+      if (backup.settings) { const s = { ...DEFAULT_SETTINGS, ...backup.settings }; setSettings(s); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+    } else {
+      updateData(normalizeData({ projects: mergeById(data.projects, backup.data.projects), findings: mergeById(data.findings, backup.data.findings), clients: mergeById(data.clients, backup.data.clients), templates: mergeById(data.templates, backup.data.templates), authorizations: mergeById(data.authorizations ?? [], backup.data.authorizations) }));
+    }
+    setPendingImport(null); confirm("Datos importados correctamente");
+  };
+  const deleteProject = (id: string) => {
+    const p = data.projects.find(x => x.id === id); if (!p) return;
+    const nf = data.findings.filter(f => f.projectId === id).length;
+    const na = (data.authorizations ?? []).filter(a => a.projectId === id).length;
+    if (!window.confirm(`¿Eliminar el proyecto "${p.name}"? También se eliminarán ${nf} hallazgo(s) y ${na} autorización(es) vinculados. Esta acción no se puede deshacer.`)) return;
+    updateData({ ...data, projects: data.projects.filter(x => x.id !== id), findings: data.findings.filter(f => f.projectId !== id), authorizations: (data.authorizations ?? []).filter(a => a.projectId !== id) });
+    confirm("Proyecto eliminado");
   };
   const activeProjects = data.projects.filter(project => project.status !== "Entregado").length;
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
@@ -106,17 +145,25 @@ export function VerticeApp() {
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div></div>
       <main className="page">
-        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} />}
-        {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={id => { const p = data.projects.find(x => x.id === id); if (p && window.confirm(`¿Eliminar el proyecto "${p.name}"? Esta acción no se puede deshacer.`)) { updateData({ ...data, projects: data.projects.filter(x => x.id !== id) }); confirm("Proyecto eliminado"); } }} />}
+        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} exportData={() => exportBackup(data, settings)} />}
+        {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => updateData({ ...data, authorizations })} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} />}
-        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} />}
+        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={() => exportBackup(data, settings)} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
+    {pendingImport ? <div className="modal-backdrop" role="presentation"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
+      <div className="modal-head"><div><small>Importar datos</small><h2 id="import-title">Ya tenés datos cargados</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingImport(null)}><X /></Button></div>
+      <form onSubmit={e => e.preventDefault()}>
+        <p>El archivo contiene {pendingImport.data.projects.length} proyectos, {pendingImport.data.findings.length} hallazgos, {pendingImport.data.clients.length} clientes, {pendingImport.data.templates.length} plantillas y {pendingImport.data.authorizations.length} autorizaciones. ¿Cómo querés importarlo?</p>
+        <p><b>Combinar:</b> añade los registros nuevos y no duplica los que tienen el mismo identificador.</p>
+        <p><b>Reemplazar todo:</b> <AlertTriangle style={{display:"inline",width:14,height:14}} /> se perderán todos los datos actuales{pendingImport.settings ? " y se restaurará la configuración del respaldo" : ""}.</p>
+        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingImport(null)}>Cancelar</Button><Button type="button" variant="outline" onClick={() => { if (window.confirm("Se perderán todos los datos actuales. ¿Continuar?")) applyImport(pendingImport, "replace"); }}>Reemplazar todo</Button><Button type="button" onClick={() => applyImport(pendingImport, "merge")}>Combinar</Button></div>
+      </form></section></div> : null}
     {notice ? <div className="toast"><Check />{notice}</div> : null}
   </div>;
 }
@@ -137,7 +184,7 @@ const isDesktopApp = typeof navigator !== "undefined" && /Electron/i.test(naviga
 function Dashboard({ data, counts, go, create, importRef, importData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; importRef: React.RefObject<HTMLInputElement | null>; importData: (file?: File) => void }) {
   const date = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
   const metrics = [["Proyectos activos",counts[0],FolderOpen],["Hallazgos abiertos",counts[1],Bug],["Críticos",counts[2],AlertTriangle],["Informes por entregar",counts[3],FileText]] as const;
-  return <><Header title="Panel de control" sub={date.charAt(0).toUpperCase()+date.slice(1)}><input ref={importRef} hidden type="file" accept="application/json,.json" onChange={event => importData(event.target.files?.[0])}/><Button variant="outline" onClick={() => importRef.current?.click()}><Upload />Importar datos</Button><Button onClick={create}><Plus />Nuevo proyecto</Button></Header>
+  return <><Header title="Panel de control" sub={date.charAt(0).toUpperCase()+date.slice(1)}><input ref={importRef} hidden type="file" accept="application/json,.json" onChange={event => importData(event.target.files?.[0])}/><Button variant="outline" onClick={() => importRef.current?.click()}><Upload />Importar datos</Button><Button variant="outline" onClick={exportData}><Download />Exportar datos</Button><Button onClick={create}><Plus />Nuevo proyecto</Button></Header>
     <div className="metric-grid">{metrics.map(([label,value,Icon]) => <div className="metric" key={label}><span><Icon />{label}</span><strong>{value}</strong></div>)}</div>
     <Section title="Proyectos en curso" action={data.projects.length ? <button className="text-link" onClick={() => go("proyectos")}>Ver todos</button> : null}>{data.projects.length ? <div className="data-table dashboard-table"><div className="table-head"><span>Proyecto</span><span>Tipo</span><span>Estado</span><span>Cliente</span><span /></div>{data.projects.slice(0,5).map(project => <button className="table-row" key={project.id} onClick={() => go("proyectos")}><span><b>{project.name}</b><small>{project.start} — {project.end}</small></span><span>{project.type}</span><Status tone="info">{project.status}</Status><span>{project.client}</span><span>→</span></button>)}</div> : <EmptyState icon={FolderOpen} title="Todavía no hay proyectos" text="Crea el primero o importa un archivo con tus datos." action={<Button onClick={create}><Plus />Crear proyecto</Button>} />}</Section>
   </>;
@@ -161,7 +208,7 @@ function Library({ templates, create }: { templates: Template[]; create: () => v
 }
 
 type ReportFormat = "pdf" | "docx" | "html" | "json";
-const SEV_ORDER = ["Crítica", "Critica", "Alta", "Media", "Baja", "Informativa"];
+const SEV_ORDER = ["Crítico", "Alto", "Medio", "Bajo"];
 
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><rect width="44" height="44" rx="10" fill="#141414"/><path d="M22 9 35 33H9Z" fill="none" stroke="#ED7D27" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="#ED7D27"/></svg>`;
 
@@ -183,7 +230,7 @@ function buildReportHtml(project: Project, list: Finding[], settings: SettingsSt
 }
 
 function generateReport(project: Project, findings: Finding[], format: ReportFormat, settings: SettingsState) {
-  const list = findings.filter(f => f.project === project.name)
+  const list = findings.filter(f => f.projectId === project.id)
     .sort((a, b) => SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity));
   const html = buildReportHtml(project, list, settings);
   const base = `Informe-${project.name.replace(/[^\w\-]+/g, "_")}`;
@@ -193,8 +240,7 @@ function generateReport(project: Project, findings: Finding[], format: ReportFor
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   if (format === "pdf") {
-    const w = window.open("", "_blank"); if (!w) return;
-    w.document.write(html.replace("</body>", "<script>window.onload=()=>window.print()</script></body>")); w.document.close();
+    printHtml(html);
   } else if (format === "docx") download("\ufeff" + html, "application/msword", "doc");
   else if (format === "html") download(html, "text/html", "html");
   else download(JSON.stringify({ project, findings: list, generatedAt: new Date().toISOString() }, null, 2), "application/json", "json");
@@ -202,18 +248,18 @@ function generateReport(project: Project, findings: Finding[], format: ReportFor
 
 function Reports({ projects, findings, settings }: { projects: Project[]; findings: Finding[]; settings: SettingsState }) {
   const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
-  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.project===project.name).length; const fmt = formats[project.id] ?? "pdf"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
+  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.projectId===project.id).length; const fmt = formats[project.id] ?? "pdf"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
 }
 
 function Clients({ clients, create }: { clients: Client[]; create: () => void }) {
   return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section></>;
 }
 
-function SettingsPage({ settings, onSave }: { settings: SettingsState; onSave: (settings: SettingsState) => void }) {
+function SettingsPage({ settings, onSave, exportData }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void }) {
   const [draft, setDraft] = useState(settings);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(draft); };
   const set = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => setDraft(current => ({ ...current, [key]: value }));
-  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo" />
+  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={exportData}><Download />Exportar datos</Button></Header>
     <form className="settings-layout" onSubmit={submit}>
       <div className="stack">
         <Section title="Consultora" className="settings-section"><Field label="Nombre de la consultora" name="organization" value={draft.organization} required onChange={value => set("organization", value)} /><p className="field-help">Este nombre se muestra en la navegación y en los informes.</p></Section>
@@ -232,13 +278,13 @@ function CreateDialog({ kind, projects, onClose, onSave }: { kind: Exclude<Creat
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); const form = new FormData(event.currentTarget); const id = crypto.randomUUID();
     if (kind === "project") onSave(kind,{id,name:String(form.get("name")),client:String(form.get("client")),type:String(form.get("type")),status:String(form.get("status")),start:String(form.get("start")),end:String(form.get("end"))});
-    if (kind === "finding") onSave(kind,{id,title:String(form.get("title")),severity:String(form.get("severity")),status:String(form.get("status")),project:String(form.get("project")),description:String(form.get("description"))});
+    if (kind === "finding") onSave(kind,{id,title:String(form.get("title")),severity:String(form.get("severity")),status:String(form.get("status")),projectId:String(form.get("projectId")) || undefined,project:projects.find(p=>p.id===form.get("projectId"))?.name ?? "",description:String(form.get("description"))});
     if (kind === "client") onSave(kind,{id,name:String(form.get("name")),industry:String(form.get("industry")),contact:String(form.get("contact")),email:String(form.get("email"))});
     if (kind === "template") onSave(kind,{id,title:String(form.get("title")),cwe:String(form.get("cwe")),category:String(form.get("category")),severity:String(form.get("severity"))});
   };
   return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if(event.target===event.currentTarget) onClose(); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div className="modal-head"><div><small>Carga de datos</small><h2 id="dialog-title">{labels[kind]}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={onClose}><X/></Button></div><form onSubmit={submit}>
     {kind === "project" && <><Field label="Nombre del proyecto" name="name" required/><Field label="Cliente" name="client" required/><div className="form-grid"><SelectField label="Tipo" name="type" options={["Aplicación web","API","App móvil","Red interna","Red externa","Nube"]}/><SelectField label="Estado" name="status" options={["Preparación","En prueba","En revisión","Entregado"]}/><Field label="Fecha de inicio" name="start" type="date" required/><Field label="Fecha de fin" name="end" type="date" required/></div></>}
-    {kind === "finding" && <><Field label="Título" name="title" required/><div className="form-grid"><SelectField label="Severidad" name="severity" options={["Crítico","Alto","Medio","Bajo"]}/><SelectField label="Estado" name="status" options={["Borrador","En revisión","Revisado","Cerrado"]}/></div><SelectField label="Proyecto" name="project" options={projects.map(p=>p.name)} empty="Sin asignar"/><label className="form-field">Descripción<textarea name="description" rows={4}/></label></>}
+    {kind === "finding" && <><Field label="Título" name="title" required/><div className="form-grid"><SelectField label="Severidad" name="severity" options={["Crítico","Alto","Medio","Bajo"]}/><SelectField label="Estado" name="status" options={["Borrador","En revisión","Revisado","Cerrado"]}/></div><label className="form-field">Proyecto<select name="projectId"><option value="">Sin asignar</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label className="form-field">Descripción<textarea name="description" rows={4}/></label></>}
     {kind === "client" && <><Field label="Nombre o razón social" name="name" required/><Field label="Industria" name="industry"/><Field label="Contacto principal" name="contact"/><Field label="Correo" name="email" type="email"/></>}
     {kind === "template" && <><Field label="Nombre de la plantilla" name="title" required/><div className="form-grid"><Field label="CWE" name="cwe" placeholder="CWE-000"/><SelectField label="Tipo" name="category" options={["Web","API","Red","Móvil","Nube"]}/><SelectField label="Severidad" name="severity" options={["Crítico","Alto","Medio","Bajo"]}/></div></>}
     <div className="modal-actions"><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button><Button type="submit">Guardar datos</Button></div>

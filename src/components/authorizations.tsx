@@ -3,6 +3,7 @@ import { Ban, CalendarClock, Check, FileSignature, Pencil, Plus, Printer, Search
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { printHtml } from "@/lib/print-html";
 
 export type AuthStatus = "Borrador" | "Enviada" | "Firmada" | "Rechazada" | "Revocada";
 export type Authorization = {
@@ -176,8 +177,7 @@ function SignDialog({ a, onClose, onSign }: { a: Authorization; onClose: () => v
 
 function printAuth(a: Authorization) {
   const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
-  const w = window.open("", "_blank"); if (!w) return;
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Autorización — ${esc(a.projectName)}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;color:#141414;line-height:1.5}h1{font-size:22px;border-bottom:2px solid #D9641E;padding-bottom:8px}h2{font-size:15px;margin-top:22px}pre{white-space:pre-wrap;font-family:inherit;background:#f7f7f7;padding:10px}.sig{margin-top:48px;border-top:1px solid #141414;width:300px;padding-top:6px}</style></head><body>
+  printHtml(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Autorización — ${esc(a.projectName)}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;color:#141414;line-height:1.5}h1{font-size:22px;border-bottom:2px solid #D9641E;padding-bottom:8px}h2{font-size:15px;margin-top:22px}pre{white-space:pre-wrap;font-family:inherit;background:#f7f7f7;padding:10px}.sig{margin-top:48px;border-top:1px solid #141414;width:300px;padding-top:6px}</style></head><body>
   <h1>Autorización de pruebas de penetración</h1>
   <p><b>Proyecto:</b> ${esc(a.projectName)}<br><b>Cliente:</b> ${esc(a.client)}<br><b>Estado:</b> ${esc(effectiveStatus(a))}</p>
   <h2>Ventana de pruebas</h2><p>${fmt(a.windowStart)} al ${fmt(a.windowEnd)}${a.hours ? ` — ${esc(a.hours)}` : ""}</p>
@@ -187,6 +187,5 @@ function printAuth(a: Authorization) {
   ${a.notes ? `<h2>Condiciones adicionales</h2><pre>${esc(a.notes)}</pre>` : ""}
   <h2>Contacto de emergencia</h2><p>${esc(a.emergencyContact || "—")}</p>
   <div class="sig">${esc(a.signedBy || a.signer)}<br>${esc(a.signerRole)}${a.signedAt ? `<br>Firmado el ${fmt(a.signedAt)}` : ""}</div>
-  <script>window.onload=()=>window.print()</script></body></html>`);
-  w.document.close();
+  </body></html>`);
 }
