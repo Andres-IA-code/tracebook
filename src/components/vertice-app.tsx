@@ -22,6 +22,7 @@ type SettingsState = {
   teamPhone: string; teamWebsite: string; teamAddress: string;
 };
 type CreateKind = "project" | "finding" | "client" | "template" | null;
+type PendingDelete = { group: string; heading: string; description: ReactNode; confirmLabel: string; run: () => void };
 
 const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [] };
 const STORAGE_KEY = "vertice-workspace-data";
@@ -100,6 +101,7 @@ export function VerticeApp() {
     else if (pendingAuditDelete) { saveAudit(audit.filter(e => e.id !== pendingAuditDelete)); confirm("Registro eliminado"); }
     setPendingAuditDelete(null);
   };
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
   useEffect(() => {
     window.localStorage.removeItem("vertice-theme");
@@ -139,18 +141,30 @@ export function VerticeApp() {
     const p = data.projects.find(x => x.id === id); if (!p) return;
     const nf = data.findings.filter(f => f.projectId === id).length;
     const na = (data.authorizations ?? []).filter(a => a.projectId === id).length;
-    if (!window.confirm(`¿Eliminar el proyecto "${p.name}"? También se eliminarán ${nf} hallazgo(s) y ${na} autorización(es) vinculados. Esta acción no se puede deshacer.`)) return;
-    updateData({ ...data, projects: data.projects.filter(x => x.id !== id), findings: data.findings.filter(f => f.projectId !== id), authorizations: (data.authorizations ?? []).filter(a => a.projectId !== id) });
-    log("Eliminación", `Proyecto "${p.name}" con ${nf} hallazgo(s) y ${na} autorización(es)`);
-    confirm("Proyecto eliminado");
+    setPendingDelete({
+      group: "Proyectos", heading: "Eliminar proyecto",
+      description: <>Se eliminará el proyecto <b>{p.name}</b> y también {nf} hallazgo(s) y {na} autorización(es) vinculados.</>,
+      confirmLabel: "Eliminar",
+      run: () => {
+        updateData({ ...data, projects: data.projects.filter(x => x.id !== id), findings: data.findings.filter(f => f.projectId !== id), authorizations: (data.authorizations ?? []).filter(a => a.projectId !== id) });
+        log("Eliminación", `Proyecto "${p.name}" con ${nf} hallazgo(s) y ${na} autorización(es)`);
+        confirm("Proyecto eliminado");
+      },
+    });
   };
   const deleteClient = (id: string) => {
     const c = data.clients.find(x => x.id === id); if (!c) return;
     const linked = data.projects.filter(p => p.client === c.name).length;
-    if (!window.confirm(`¿Eliminar el cliente "${c.name}"? Sus proyectos no se borran, pero quedarán sin cliente asociado. Esta acción no se puede deshacer.`)) return;
-    updateData({ ...data, clients: data.clients.filter(x => x.id !== id) });
-    log("Eliminación", `Cliente "${c.name}"${linked ? ` (${linked} proyecto(s) asociado(s))` : ""}`);
-    confirm("Cliente eliminado");
+    setPendingDelete({
+      group: "Clientes", heading: "Eliminar cliente",
+      description: <>Se eliminará el cliente <b>{c.name}</b>. Sus proyectos no se borran, pero quedarán sin cliente asociado.</>,
+      confirmLabel: "Eliminar",
+      run: () => {
+        updateData({ ...data, clients: data.clients.filter(x => x.id !== id) });
+        log("Eliminación", `Cliente "${c.name}"${linked ? ` (${linked} proyecto(s) asociado(s))` : ""}`);
+        confirm("Cliente eliminado");
+      },
+    });
   };
   const activeProjects = data.projects.filter(project => project.status !== "Entregado").length;
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
