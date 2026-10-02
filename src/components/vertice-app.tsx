@@ -157,7 +157,7 @@ export function VerticeApp() {
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div></div>
       <main className="page">
-        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} exportData={doExport} audit={audit} />}
+        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} importRef={importRef} importData={importData} exportData={doExport} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
@@ -282,7 +282,7 @@ function SettingsPage({ settings, onSave, exportData, audit }: { settings: Setti
         <Button type="submit" size="lg"><Check />Guardar configuración</Button>
       </div>
     </form>
-    <Section title="Registro de auditoría" className="settings-section">{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "danger" : "info"}>{e.action}</Status><span>{e.detail}</span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las importaciones, exportaciones y eliminaciones." />}</Section>
+    <Section title="Registro de auditoría" className="settings-section">{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "warning" : "info"}>{e.action}</Status><span>{e.detail}</span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las importaciones, exportaciones y eliminaciones." />}</Section>
   </>;
 }
 
