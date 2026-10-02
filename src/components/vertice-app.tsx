@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
-  AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, FileText, FolderOpen,
+  AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
   LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
@@ -370,9 +370,39 @@ function generateReport(project: Project, findings: Finding[], format: ReportFor
   else download(JSON.stringify({ project, findings: list, generatedAt: new Date().toISOString() }, null, 2), "application/json", "json");
 }
 
+function buildLatexPreviewHtml(project: Project, list: Finding[], settings: SettingsState) {
+  const esc = (s: string) => (s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+  const hex = (v: string, f: string) => /^#[0-9a-f]{6}$/i.test(v) ? v : f;
+  const p = hex(settings.latexPrimaryColor, "#D9641E"), tx = hex(settings.latexTextColor, "#141414"), sc = hex(settings.latexSecondaryColor, "#757575");
+  const org = esc(settings.organization || "Vértice");
+  const date = new Date().toLocaleDateString("es-AR");
+  const contacts = [settings.teamPhone, settings.teamWebsite, settings.teamAddress].filter(Boolean).map(esc).join(" · ");
+  const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
+  const logo = /^data:image\/(png|jpeg);base64,/.test(settings.latexLogo)
+    ? `<img src="${settings.latexLogo}" alt="" style="width:42px;height:42px;object-fit:contain">`
+    : `<svg width="42" height="42" viewBox="0 0 44 44"><rect width="44" height="44" fill="${tx}"/><path d="M22 9 35 33H9Z" fill="none" stroke="${p}" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="${p}"/></svg>`;
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>body{margin:0;background:#8a8a8a;padding:24px;font-family:"Latin Modern Roman","Computer Modern",Georgia,serif}.page{background:#fff;color:${tx};max-width:640px;margin:0 auto;padding:48px 56px;box-shadow:0 4px 20px rgba(0,0,0,.3);min-height:800px;display:flex;flex-direction:column}.hd{display:flex;justify-content:space-between;font-size:10px;color:${sc};border-bottom:.6px solid ${p};padding-bottom:4px;margin-bottom:28px}.brand{display:flex;gap:12px;align-items:center}.brand b{font-size:18px}.brand small{display:block;color:${sc};font-size:11px}h1{font-size:22px;margin:22px 0 4px}.rule{height:1.5px;background:${p};margin-bottom:18px}h2{color:${p};font-size:15px;margin:20px 0 8px}h3{font-size:13px;margin:12px 0 2px}table{border-collapse:collapse;font-size:12px}td,th{padding:3px 14px 3px 0;text-align:left}th{border-bottom:1px solid ${tx}}.k{color:${sc}}p,pre{font-size:12px;white-space:pre-wrap;font-family:inherit;margin:4px 0}.ft{margin-top:auto;padding-top:28px;font-size:10px;color:${sc};text-align:center;border-top:.6px solid ${p}}</style></head><body><div class="page">
+<div class="hd"><span>${org}${contacts ? ` · ${contacts}` : ""}</span><span>${esc(project.name)}</span></div>
+<div class="brand">${logo}<div><b>${org}</b><small>Informe de prueba de penetración${settings.userName ? ` · Emitido por ${esc(settings.userName)}` : ""}</small></div></div>
+<h1>Informe de prueba de penetración</h1><div class="rule"></div>
+<h2>Identificación del proyecto</h2><table><tr><td class="k">Proyecto</td><td><b>${esc(project.name)}</b></td></tr><tr><td class="k">Cliente</td><td>${esc(project.client)}</td></tr><tr><td class="k">Tipo</td><td>${esc(project.type)}</td></tr><tr><td class="k">Período</td><td>${esc(project.start)} — ${esc(project.end)}</td></tr><tr><td class="k">Emisión</td><td>${date}</td></tr></table>
+<h2>Resumen ejecutivo</h2><p>Se identificaron ${list.length} hallazgos.</p><table><tr><th>Severidad</th><th>Cantidad</th></tr>${counts.map(([s, n]) => `<tr><td>${s}</td><td>${n}</td></tr>`).join("")}</table>
+<h2>Detalle de hallazgos</h2>${list.map((f, i) => `<h3>${i + 1}. ${esc(f.title)}</h3><p><span class="k">Severidad:</span> ${esc(f.severity)} · <span class="k">Estado:</span> ${esc(f.status)}</p><pre>${esc(f.description || "Sin descripción")}</pre>`).join("")}
+<div class="ft">${org}${contacts ? ` · ${contacts}` : ""} · Documento confidencial</div>
+</div></body></html>`;
+}
+
 function Reports({ projects, findings, settings }: { projects: Project[]; findings: Finding[]; settings: SettingsState }) {
   const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
-  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.projectId===project.id).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select><Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}</>;
+  const [preview, setPreview] = useState<Project | null>(null);
+  const previewList = preview ? findings.filter(f => f.projectId === preview.id) : [];
+  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.projectId===project.id).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select>{fmt === "latex" ? <Button size="sm" variant="outline" disabled={!total} onClick={() => setPreview(project)}><Eye/>Vista previa</Button> : null}<Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}
+  {preview ? <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setPreview(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="latex-preview-title" style={{ width: "min(860px, 96vw)", maxWidth: "none" }}>
+    <div className="modal-head"><div><small>Vista previa LaTeX</small><h2 id="latex-preview-title">{preview.name}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPreview(null)}><X/></Button></div>
+    <iframe title="Vista previa del informe LaTeX" srcDoc={buildLatexPreviewHtml(preview, previewList, settings)} style={{ width: "100%", height: "65vh", border: 0, display: "block" }} />
+    <p className="field-help">Aproximación visual del documento compilado. Logotipo, colores y contacto se toman de Configuración → Plantilla LaTeX.</p>
+    <div className="modal-actions"><Button variant="outline" onClick={() => setPreview(null)}>Cerrar</Button><Button onClick={() => { generateReport(preview, findings, "latex", settings); setPreview(null); }}><FileText/>Exportar .tex</Button></div>
+  </section></div> : null}</>;
 }
 
 function Clients({ clients, create, onDelete }: { clients: Client[]; create: () => void; onDelete: (id: string) => void }) {
