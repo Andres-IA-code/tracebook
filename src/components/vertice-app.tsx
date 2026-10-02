@@ -11,7 +11,7 @@ import { Authorizations, type Authorization } from "@/components/authorizations"
 
 type View = "panel" | "proyectos" | "autorizaciones" | "hallazgos" | "biblioteca" | "informes" | "clientes" | "configuracion";
 type Project = { id: string; name: string; client: string; type: string; status: string; start: string; end: string };
-type Finding = { id: string; title: string; severity: string; status: string; project: string; projectId?: string; description: string };
+type Finding = { id: string; title: string; severity: string; status: string; project: string; projectId?: string | undefined; description: string };
 type Client = { id: string; name: string; industry: string; contact: string; email: string };
 type Template = { id: string; title: string; cwe: string; category: string; severity: string };
 type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; templates: Template[]; authorizations: Authorization[] };
@@ -23,7 +23,7 @@ const STORAGE_KEY = "vertice-workspace-data";
 const SETTINGS_KEY = "vertice-settings";
 const DEFAULT_SETTINGS: SettingsState = { organization: "", userName: "", email: "", role: "Responsable", timezone: "America/Argentina/Buenos_Aires", emailAlerts: true, reportAlerts: true };
 
-type Backup = { data: DataState; settings?: Partial<SettingsState> };
+type Backup = { data: DataState; settings?: Partial<SettingsState> | undefined };
 function normalizeData(parsed: Partial<DataState>): DataState {
   const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] };
   if (![next.projects, next.findings, next.clients, next.templates, next.authorizations].every(Array.isArray)) throw new Error("formato");
