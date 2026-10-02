@@ -112,6 +112,13 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
 
     {editing ? <AuthForm initial={editing === "new" ? null : editing} projects={projects} onClose={() => setEditing(null)} onSave={save} /> : null}
     {signing ? <SignDialog a={signing} onClose={() => setSigning(null)} onSign={(name) => { patch(signing.id, { status: "Firmada", signedAt: new Date().toISOString(), signedBy: name }, "Firma registrada"); setSigning(null); }} /> : null}
+    {pendingRemove ? <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setPendingRemove(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="auth-delete-title">
+      <div className="modal-head"><div><small>Autorizaciones</small><h2 id="auth-delete-title">Eliminar autorización</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingRemove(null)}><X /></Button></div>
+      <form onSubmit={event => { event.preventDefault(); applyRemove(); }}>
+        <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se eliminará la autorización de <b>{pendingRemove.projectName}</b> ({pendingRemove.client}).</p>
+        <p>Esta acción no se puede deshacer.</p>
+        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingRemove(null)}>Cancelar</Button><Button type="submit"><Trash2 />Eliminar</Button></div>
+      </form></section></div> : null}
   </>;
 }
 
