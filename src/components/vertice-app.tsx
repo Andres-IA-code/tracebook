@@ -143,6 +143,14 @@ export function VerticeApp() {
     log("Eliminación", `Proyecto "${p.name}" con ${nf} hallazgo(s) y ${na} autorización(es)`);
     confirm("Proyecto eliminado");
   };
+  const deleteClient = (id: string) => {
+    const c = data.clients.find(x => x.id === id); if (!c) return;
+    const linked = data.projects.filter(p => p.client === c.name).length;
+    if (!window.confirm(`¿Eliminar el cliente "${c.name}"? Sus proyectos no se borran, pero quedarán sin cliente asociado. Esta acción no se puede deshacer.`)) return;
+    updateData({ ...data, clients: data.clients.filter(x => x.id !== id) });
+    log("Eliminación", `Cliente "${c.name}"${linked ? ` (${linked} proyecto(s) asociado(s))` : ""}`);
+    confirm("Cliente eliminado");
+  };
   const activeProjects = data.projects.filter(project => project.status !== "Entregado").length;
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
   const critical = data.findings.filter(finding => finding.severity === "Crítico" && finding.status !== "Cerrado").length;
