@@ -37,8 +37,9 @@
   --color-success-soft: var(--success-soft);
   --color-success-strong: var(--success-strong);
   --color-info-soft: var(--info-soft);
-  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: "Archivo Narrow", system-ui, sans-serif;
+  --font-display: "Anton", Impact, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 :root {
@@ -438,3 +439,46 @@ dl { margin: 0; }
 @media (max-width: 640px) { .auth-facts, .auth-checks { grid-template-columns: 1fr; } }
 
 .report-format{background:var(--background);color:var(--foreground);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px}
+
+/* ===== Industrial poster aesthetic: black/white/signal-orange, hard edges, condensed display type ===== */
+:root {
+  --radius: 0px;
+  --background: oklch(0.13 0 0);
+  --foreground: oklch(0.98 0 0);
+  --heading-foreground: oklch(0.98 0 0);
+  --card: oklch(0.17 0 0);
+  --popover: oklch(0.17 0 0);
+  --primary: oklch(0.68 0.21 40);
+  --primary-foreground: oklch(0.1 0 0);
+  --ring: oklch(0.68 0.21 40);
+  --critical: oklch(0.68 0.21 40);
+  --destructive: oklch(0.68 0.21 40);
+  --secondary: oklch(0.26 0 0);
+  --accent: oklch(0.98 0 0);
+  --accent-foreground: oklch(0.1 0 0);
+  --muted: oklch(0.24 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --border: oklch(0.98 0 0 / 0.85);
+  --input: oklch(0.98 0 0 / 0.6);
+}
+*, *::before, *::after { border-radius: 0 !important; }
+body { font-family: var(--font-sans); letter-spacing: .01em; }
+.page-head h1, h1, .metric strong, .brand {
+  font-family: var(--font-display); font-weight: 400; text-transform: uppercase; letter-spacing: .005em; line-height: .92;
+}
+.page-head h1 { font-size: clamp(40px, 5vw, 72px); }
+.metric strong { font-size: 56px; }
+h2, h3, .section-head, .modal-head, .detail-head { font-family: var(--font-sans); font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+.page-head p, .breadcrumb, .metric span, .nav-item, .nav-item em, small, th, label, .badge, button, input, select, textarea {
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .04em; font-size: 12px;
+}
+input, textarea, select { text-transform: none; font-size: 13px; }
+.page-head { border-bottom: 3px solid var(--foreground); padding-bottom: 18px; }
+.sidebar { border-right: 2px solid var(--foreground); }
+.brand-mark { background: var(--primary); transform: none; width: 18px; height: 18px; }
+.nav-item { border-bottom: 1px solid color-mix(in oklab, var(--foreground) 18%, transparent); }
+.nav-item.active { background: var(--primary); color: var(--primary-foreground); }
+.nav-item:hover:not(.active) { background: var(--foreground); color: var(--background); }
+.metric { border: 2px solid var(--foreground); }
+.metric:first-child { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+.metric:first-child span, .metric:first-child strong { color: var(--primary-foreground); -webkit-text-fill-color: var(--primary-foreground); }
