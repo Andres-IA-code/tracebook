@@ -77,7 +77,7 @@ function EmptyState({ icon: Icon, title, text, action }: { icon: typeof FolderOp
   return <div className="empty-state"><span><Icon /></span><h3>{title}</h3><p>{text}</p>{action}</div>;
 }
 
-export function VerticeApp() {
+export function VerticeApp({ userEmail, onSignOut }: { userEmail?: string; onSignOut?: () => void } = {}) {
   const [view, setView] = useState<View>("panel");
   const [mobileNav, setMobileNav] = useState(false);
   const [notice, setNotice] = useState("");
@@ -175,7 +175,7 @@ export function VerticeApp() {
       <div className="brand"><span className="brand-mark" />Vértice<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
       <button className="org-switcher" onClick={() => go("configuracion")}><span className="org-avatar">{initials(settings.organization || "Vértice")}</span><span><b>{settings.organization || "Mi consultora"}</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
       <nav aria-label="Navegación principal">{navItems.map(([key,label,Icon]) => <button key={key} className={cn("nav-item", view === key && "active")} onClick={() => go(key)}><Icon /><span>{label}</span></button>)}</nav>
-      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.verticeDesktop?.quit()}><LogOut /><span>Salir</span></button> : null}<div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
+      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.verticeDesktop?.quit()}><LogOut /><span>Salir</span></button> : null}{onSignOut ? <button className="nav-item nav-exit" onClick={onSignOut}><LogOut /><span>Cerrar sesión</span></button> : null}<div className="profile"><span>{initials(settings.userName || userEmail || "Usuario")}</span><div><b>{settings.userName || userEmail || "Usuario"}</b><small>{settings.role}</small></div></div></div>
     </aside>
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vértice</div></div>
