@@ -470,6 +470,7 @@ dl { margin: 0; }
   --info-soft: oklch(0.9 0.05 55);
 }
 *, *::before, *::after { border-radius: 0 !important; }
+b, strong { font-weight: 500; }
 body { font-family: var(--font-sans); letter-spacing: .01em; }
 .page-head h1, h1, .metric strong, .brand {
   font-family: var(--font-display); font-weight: 300; text-transform: uppercase; letter-spacing: .005em; line-height: .92;
