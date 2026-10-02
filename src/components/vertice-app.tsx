@@ -291,6 +291,7 @@ function Clients({ clients, create, onDelete }: { clients: Client[]; create: () 
 
 function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
   const [draft, setDraft] = useState(settings);
+  useEffect(() => setDraft(settings), [settings]);
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); onSave(draft); };
   const set = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => setDraft(current => ({ ...current, [key]: value }));
   return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
