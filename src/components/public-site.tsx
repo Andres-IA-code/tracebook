@@ -11,15 +11,22 @@ export function Logo() {
   );
 }
 
+function scrollToSection(e: React.MouseEvent<HTMLAnchorElement>, id: string) {
+  if (window.location.pathname !== "/") return; // desde otra página, navegación normal
+  e.preventDefault();
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  history.replaceState(null, "", `/#${id}`);
+}
+
 export function PublicHeader() {
   return (
     <header className="pub-header">
       <div className="pub-wrap pub-header-inner">
         <Logo />
         <nav className="pub-nav">
-          <a href="/#funciones">Funciones</a>
-          <a href="/#como-funciona">Cómo funciona</a>
-          <a href="/#seguridad">Seguridad</a>
+          <a href="/#funciones" onClick={(e) => scrollToSection(e, "funciones")}>Funciones</a>
+          <a href="/#como-funciona" onClick={(e) => scrollToSection(e, "como-funciona")}>Cómo funciona</a>
+          <a href="/#seguridad" onClick={(e) => scrollToSection(e, "seguridad")}>Seguridad</a>
         </nav>
         <div className="pub-actions">
           <Button asChild variant="outline"><Link to="/login">Iniciar sesión</Link></Button>
