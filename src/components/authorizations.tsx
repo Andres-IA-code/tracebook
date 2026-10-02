@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Ban, CalendarClock, Check, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
+import { Ban, CalendarClock, Check, FileDown, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -138,7 +138,8 @@ function AuthDetail({ a, onEdit, onDelete, onSend, onMail, onSign, onReject, onR
       {editable ? <Button onClick={onSign} variant={a.status === "Enviada" ? "default" : "outline"}><FileSignature />Registrar firma</Button> : null}
       {a.status === "Enviada" ? <Button variant="outline" onClick={onReject}><X />Rechazada</Button> : null}
       {a.status === "Firmada" ? <Button variant="outline" onClick={onRevoke}><Ban />Revocar</Button> : null}
-      <Button variant="outline" onClick={() => printAuth(a)}><Printer />Imprimir / PDF</Button>
+      <Button variant="outline" onClick={() => downloadAuthPdf(a)}><FileDown />Descargar PDF</Button>
+      <Button variant="outline" onClick={() => printAuth(a)}><Printer />Imprimir</Button>
       {editable ? <Button variant="ghost" onClick={onEdit}><Pencil />Editar</Button> : null}
       <Button variant="ghost" onClick={onDelete}><Trash2 />Eliminar</Button>
     </div>
@@ -197,6 +198,82 @@ function SignDialog({ a, onClose, onSign }: { a: Authorization; onClose: () => v
       </form>
     </section>
   </div>;
+}
+
+async function downloadAuthPdf(a: Authorization) {
+  try {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const maxW = pageW - margin * 2;
+    let y = margin;
+
+    const ensureSpace = (needed: number) => {
+      if (y + needed > pageH - margin) { doc.addPage(); y = margin; }
+    };
+    const heading = (text: string) => {
+      ensureSpace(12);
+      y += 6;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(20, 20, 20);
+      doc.text(text, margin, y);
+      y += 6;
+    };
+    const body = (text: string) => {
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(60, 60, 60);
+      const lines = doc.splitTextToSize(text, maxW) as string[];
+      for (const line of lines) { ensureSpace(5); doc.text(line, margin, y); y += 5; }
+    };
+
+    // Encabezado
+    doc.setFillColor(217, 100, 30);
+    doc.rect(0, 0, pageW, 4, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.setTextColor(20, 20, 20);
+    doc.text("Autorización de pruebas de penetración", margin, y + 4);
+    y += 12;
+    doc.setDrawColor(217, 100, 30); doc.setLineWidth(0.8);
+    doc.line(margin, y, pageW - margin, y);
+    y += 8;
+
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(60, 60, 60);
+    body(`Proyecto: ${a.projectName}`);
+    body(`Cliente: ${a.client}`);
+    body(`Estado: ${effectiveStatus(a)}`);
+
+    heading("Ventana de pruebas");
+    body(`${fmt(a.windowStart)} al ${fmt(a.windowEnd)}${a.hours ? ` — ${a.hours}` : ""}`);
+
+    heading("Tipo de prueba");
+    body(a.testTypes.join(", ") || "—");
+
+    heading("Alcance autorizado");
+    body(a.scope);
+
+    heading("Exclusiones");
+    body(a.exclusions || "Sin exclusiones declaradas");
+
+    if (a.notes) { heading("Condiciones adicionales"); body(a.notes); }
+
+    heading("Contacto de emergencia");
+    body(a.emergencyContact || "—");
+
+    // Firma
+    ensureSpace(30);
+    y += 18;
+    doc.setDrawColor(20, 20, 20); doc.setLineWidth(0.4);
+    doc.line(margin, y, margin + 80, y);
+    y += 5;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(20, 20, 20);
+    doc.text(a.signedBy || a.signer, margin, y); y += 5;
+    doc.text(a.signerRole, margin, y); y += 5;
+    if (a.signedAt) { doc.text(`Firmado el ${fmt(a.signedAt)}`, margin, y); }
+
+    const slug = a.projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "autorizacion";
+    doc.save(`autorizacion-${slug}.pdf`);
+  } catch {
+    window.alert("No se pudo generar el PDF. Probá con la opción Imprimir.");
+  }
 }
 
 function printAuth(a: Authorization) {
