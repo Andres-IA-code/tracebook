@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell } = require("electron");
+const { app, BrowserWindow, shell, ipcMain } = require("electron");
 const path = require("node:path");
 
 // Vértice is fully local: skip Chromium services that otherwise run during startup.
@@ -20,6 +20,7 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
 
@@ -30,6 +31,9 @@ function createWindow() {
     return { action: "deny" };
   });
 }
+
+// "Salir" button in the workspace sidebar asks the main process to exit.
+ipcMain.on("app-quit", () => app.quit());
 
 app.whenReady().then(() => {
   createWindow();
