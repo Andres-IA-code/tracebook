@@ -436,3 +436,5 @@ dl { margin: 0; }
 .auth-consent { font-size: 14px; margin: 14px 0; }
 .auth-signature { margin-top: 10px; padding: 18px; border: 1px dashed var(--border); border-radius: 8px; font-family: "Brush Script MT", cursive; font-size: 30px; color: var(--heading-foreground); text-align: center; }
 @media (max-width: 640px) { .auth-facts, .auth-checks { grid-template-columns: 1fr; } }
+
+.report-format{background:var(--background);color:var(--foreground);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px}
