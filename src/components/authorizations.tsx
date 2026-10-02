@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Ban, CalendarClock, Check, FileDown, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, Ban, CalendarClock, Check, FileDown, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -51,9 +51,12 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
     setEditing(null); setSelected(a.id); notify(exists ? "Autorización actualizada" : "Autorización creada");
   };
   const patch = (id: string, p: Partial<Authorization>, msg: string) => { onChange(items.map(i => i.id === id ? { ...i, ...p } : i)); notify(msg); };
-  const remove = (id: string) => {
-    if (!window.confirm("¿Eliminar esta autorización? Esta acción no se puede deshacer.")) return;
-    onChange(items.filter(i => i.id !== id)); setSelected(null); notify("Autorización eliminada");
+  const [pendingRemove, setPendingRemove] = useState<Authorization | null>(null);
+  const remove = (a: Authorization) => setPendingRemove(a);
+  const applyRemove = () => {
+    if (!pendingRemove) return;
+    onChange(items.filter(i => i.id !== pendingRemove.id)); setSelected(null);
+    notify("Autorización eliminada"); setPendingRemove(null);
   };
 
   return <>
@@ -75,7 +78,7 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
           <span><FileSignature /></span><div><b>{a.projectName}</b><small>{a.client} · {fmt(a.windowStart)} — {fmt(a.windowEnd)}</small></div><span className={cn("status", tone[s])}>{s}</span></button>; })
           : <p className="auth-none">No hay autorizaciones con este filtro.</p>}</div></section>
         <section className="surface">{current ? <AuthDetail a={current}
-          onEdit={() => setEditing(current)} onDelete={() => remove(current.id)}
+          onEdit={() => setEditing(current)} onDelete={() => remove(current)}
           onSend={() => patch(current.id, { status: "Enviada", sentAt: new Date().toISOString() }, "Marcada como enviada al cliente")}
           onMail={() => {
             if (!current.signerEmail) { window.alert("Esta autorización no tiene correo del firmante. Editala para agregarlo."); return; }
@@ -109,6 +112,13 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
 
     {editing ? <AuthForm initial={editing === "new" ? null : editing} projects={projects} onClose={() => setEditing(null)} onSave={save} /> : null}
     {signing ? <SignDialog a={signing} onClose={() => setSigning(null)} onSign={(name) => { patch(signing.id, { status: "Firmada", signedAt: new Date().toISOString(), signedBy: name }, "Firma registrada"); setSigning(null); }} /> : null}
+    {pendingRemove ? <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setPendingRemove(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="auth-delete-title">
+      <div className="modal-head"><div><small>Autorizaciones</small><h2 id="auth-delete-title">Eliminar autorización</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingRemove(null)}><X /></Button></div>
+      <form onSubmit={event => { event.preventDefault(); applyRemove(); }}>
+        <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se eliminará la autorización de <b>{pendingRemove.projectName}</b> ({pendingRemove.client}).</p>
+        <p>Esta acción no se puede deshacer.</p>
+        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingRemove(null)}>Cancelar</Button><Button type="submit"><Trash2 />Eliminar</Button></div>
+      </form></section></div> : null}
   </>;
 }
 

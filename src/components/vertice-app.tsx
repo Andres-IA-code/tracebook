@@ -22,6 +22,7 @@ type SettingsState = {
   teamPhone: string; teamWebsite: string; teamAddress: string;
 };
 type CreateKind = "project" | "finding" | "client" | "template" | null;
+type PendingDelete = { group: string; heading: string; description: ReactNode; confirmLabel: string; run: () => void };
 
 const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [] };
 const STORAGE_KEY = "vertice-workspace-data";
@@ -100,6 +101,7 @@ export function VerticeApp() {
     else if (pendingAuditDelete) { saveAudit(audit.filter(e => e.id !== pendingAuditDelete)); confirm("Registro eliminado"); }
     setPendingAuditDelete(null);
   };
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
   useEffect(() => {
     window.localStorage.removeItem("vertice-theme");
@@ -139,18 +141,30 @@ export function VerticeApp() {
     const p = data.projects.find(x => x.id === id); if (!p) return;
     const nf = data.findings.filter(f => f.projectId === id).length;
     const na = (data.authorizations ?? []).filter(a => a.projectId === id).length;
-    if (!window.confirm(`¿Eliminar el proyecto "${p.name}"? También se eliminarán ${nf} hallazgo(s) y ${na} autorización(es) vinculados. Esta acción no se puede deshacer.`)) return;
-    updateData({ ...data, projects: data.projects.filter(x => x.id !== id), findings: data.findings.filter(f => f.projectId !== id), authorizations: (data.authorizations ?? []).filter(a => a.projectId !== id) });
-    log("Eliminación", `Proyecto "${p.name}" con ${nf} hallazgo(s) y ${na} autorización(es)`);
-    confirm("Proyecto eliminado");
+    setPendingDelete({
+      group: "Proyectos", heading: "Eliminar proyecto",
+      description: <>Se eliminará el proyecto <b>{p.name}</b> y también {nf} hallazgo(s) y {na} autorización(es) vinculados.</>,
+      confirmLabel: "Eliminar",
+      run: () => {
+        updateData({ ...data, projects: data.projects.filter(x => x.id !== id), findings: data.findings.filter(f => f.projectId !== id), authorizations: (data.authorizations ?? []).filter(a => a.projectId !== id) });
+        log("Eliminación", `Proyecto "${p.name}" con ${nf} hallazgo(s) y ${na} autorización(es)`);
+        confirm("Proyecto eliminado");
+      },
+    });
   };
   const deleteClient = (id: string) => {
     const c = data.clients.find(x => x.id === id); if (!c) return;
     const linked = data.projects.filter(p => p.client === c.name).length;
-    if (!window.confirm(`¿Eliminar el cliente "${c.name}"? Sus proyectos no se borran, pero quedarán sin cliente asociado. Esta acción no se puede deshacer.`)) return;
-    updateData({ ...data, clients: data.clients.filter(x => x.id !== id) });
-    log("Eliminación", `Cliente "${c.name}"${linked ? ` (${linked} proyecto(s) asociado(s))` : ""}`);
-    confirm("Cliente eliminado");
+    setPendingDelete({
+      group: "Clientes", heading: "Eliminar cliente",
+      description: <>Se eliminará el cliente <b>{c.name}</b>. Sus proyectos no se borran, pero quedarán sin cliente asociado.</>,
+      confirmLabel: "Eliminar",
+      run: () => {
+        updateData({ ...data, clients: data.clients.filter(x => x.id !== id) });
+        log("Eliminación", `Cliente "${c.name}"${linked ? ` (${linked} proyecto(s) asociado(s))` : ""}`);
+        confirm("Cliente eliminado");
+      },
+    });
   };
   const activeProjects = data.projects.filter(project => project.status !== "Entregado").length;
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
@@ -170,7 +184,7 @@ export function VerticeApp() {
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
-        {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); if (t) log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); }} />}
+        {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
         {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
@@ -192,6 +206,13 @@ export function VerticeApp() {
         <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrará la configuración ingresada (consultora, perfil y notificaciones) y todo volverá a los valores predeterminados.</p>
         <p>Los datos cargados (proyectos, hallazgos, autorizaciones, clientes y plantillas) <b>no se borran</b>. Esta acción quedará registrada en el registro de auditoría.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingReset(false)}>Cancelar</Button><Button type="submit"><RotateCcw />Restablecer</Button></div>
+      </form></section></div> : null}
+    {pendingDelete ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingDelete(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <div className="modal-head"><div><small>{pendingDelete.group}</small><h2 id="delete-title">{pendingDelete.heading}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingDelete(null)}><X /></Button></div>
+      <form onSubmit={event => { event.preventDefault(); pendingDelete.run(); setPendingDelete(null); }}>
+        <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> {pendingDelete.description}</p>
+        <p>Esta acción no se puede deshacer.</p>
+        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingDelete(null)}>Cancelar</Button><Button type="submit"><Trash2 />{pendingDelete.confirmLabel}</Button></div>
       </form></section></div> : null}
     {notice ? <div className="toast"><Check />{notice}</div> : null}
   </div>;
@@ -234,7 +255,7 @@ function Findings({ findings, create }: { findings: Finding[]; create: () => voi
 
 function Library({ templates, create, onDelete }: { templates: Template[]; create: () => void; onDelete: (id: string) => void }) {
   const [viewing, setViewing] = useState<Template | null>(null);
-  const del = (t: Template) => { if (window.confirm(`¿Eliminar la plantilla "${t.title}"? Esta acción no se puede deshacer.`)) { onDelete(t.id); setViewing(null); } };
+  const del = (t: Template) => { onDelete(t.id); setViewing(null); };
   return <><Header title="Biblioteca de hallazgos" sub={`${templates.length} plantillas`}><Button onClick={create}><Plus />Nueva plantilla</Button></Header><Section>{templates.length ? <div className="data-table library-table"><div className="table-head"><span>Plantilla</span><span>CWE</span><span>Tipo</span><span>Severidad</span><span /></div>{templates.map(template=><div className="table-row" key={template.id}><b>{template.title}</b><span>{template.cwe || "—"}</span><span>{template.category}</span><em className={cn("severity",sevClass[template.severity])}>{template.severity}</em><span style={{display:"flex",gap:4}}><Button variant="ghost" size="sm" onClick={()=>setViewing(template)}>Ver</Button><button className="icon-danger" aria-label={`Eliminar ${template.title}`} title="Eliminar plantilla" onClick={()=>del(template)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={BookOpen} title="Biblioteca vacía" text="Agrega tus propias plantillas verificadas." action={<Button onClick={create}><Plus />Nueva plantilla</Button>} />}</Section>
   {viewing && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setViewing(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="tpl-title"><div className="modal-head"><div><small>Plantilla</small><h2 id="tpl-title">{viewing.title}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={()=>setViewing(null)}><X/></Button></div><div className="data-table"><div className="table-row"><span>CWE</span><b>{viewing.cwe || "—"}</b></div><div className="table-row"><span>Tipo</span><b>{viewing.category}</b></div><div className="table-row"><span>Severidad</span><em className={cn("severity",sevClass[viewing.severity])}>{viewing.severity}</em></div></div><div className="modal-actions"><Button variant="outline" onClick={()=>del(viewing)}><Trash2/>Eliminar</Button><Button onClick={()=>setViewing(null)}>Cerrar</Button></div></section></div>}</>;
 }
