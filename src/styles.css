@@ -577,9 +577,7 @@ input, textarea, select { text-transform: none; font-size: 13px; }
   .pub-grid, .pub-steps { grid-template-columns: 1fr; }
   .pub-steps li { border-right: 0; border-bottom: 1px solid var(--border); }
 }
-@media (max-width: 760px) {
-}
 @media (max-width: 520px) { .pub-actions .pub-outline-hide, .pub-header .pub-actions a:first-child { display: none; } }
 
-/* Escena del cubo controlada por scroll (solo landing) */
+/* Encabezado landing */
 .pub-landing .pub-header { background: color-mix(in oklab, var(--background) 92%, transparent); }
