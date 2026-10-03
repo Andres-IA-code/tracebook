@@ -60,12 +60,11 @@ function Landing() {
     const tick = () => {
       // Interpolación gradual para que el movimiento sea fluido
       current += (target - current) * 0.08;
-      const rotate = current * 160; // giro total a lo largo de la página
-      const driftY = current * 45; // porcentaje de desplazamiento vertical
-      const scale = 1 + current * 0.35;
-      const opacity = 0.55 - current * 0.25;
-      el.style.transform = `translate(-50%, calc(-55% + ${driftY}px)) rotate(${rotate}deg) scale(${scale})`;
-      el.style.opacity = String(Math.max(0.15, opacity));
+      const rotate = current * 360; // giro total a lo largo de la página
+      const driftX = Math.sin(current * Math.PI * 2) * 18; // vaivén lateral en vw
+      const driftY = Math.cos(current * Math.PI) * 10; // vaivén vertical en vh
+      const scale = 1 + Math.sin(current * Math.PI) * 0.25;
+      el.style.transform = `translate(calc(-50% + ${driftX}vw), calc(-50% + ${driftY}vh)) rotate(${rotate}deg) scale(${scale})`;
       raf = requestAnimationFrame(tick);
     };
 
