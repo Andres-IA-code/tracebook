@@ -6,9 +6,9 @@ import cubeVideoWebm from "@/assets/vertice-cube-scroll.webm.asset.json";
 
 export function CubeScrollScene() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const posterRef = useRef<HTMLImageElement>(null);
   const frameRef = useRef<number | undefined>(undefined);
   const [videoReady, setVideoReady] = useState(false);
-  const [hasScrolled, setHasScrolled] = useState(false);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -23,7 +23,8 @@ export function CubeScrollScene() {
       const scrollRange = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
       const progress = Math.min(Math.max(window.scrollY / scrollRange, 0), 1);
       const nextTime = progress * Math.max(video.duration - 0.04, 0);
-      setHasScrolled(progress > 0.002);
+      video.classList.toggle("is-visible", progress > 0.002);
+      posterRef.current?.classList.toggle("is-hidden", progress > 0.002);
       if (Math.abs(video.currentTime - nextTime) > 0.025) video.currentTime = nextTime;
     };
 
@@ -46,13 +47,14 @@ export function CubeScrollScene() {
   return (
     <div className="cube-scroll-scene" aria-hidden="true">
       <img
-        className={`cube-scroll-poster ${videoReady && hasScrolled ? "is-hidden" : ""}`}
+        ref={posterRef}
+        className="cube-scroll-poster"
         src={cubePoster.url}
         alt=""
       />
       <video
         ref={videoRef}
-        className={`cube-scroll-video ${videoReady && hasScrolled ? "is-visible" : ""}`}
+        className="cube-scroll-video"
         muted
         playsInline
         preload="auto"
@@ -61,6 +63,7 @@ export function CubeScrollScene() {
           event.currentTarget.pause();
           event.currentTarget.currentTime = 0;
           setVideoReady(true);
+          window.dispatchEvent(new Event("scroll"));
         }}
       >
         <source src={cubeVideoWebm.url} type="video/webm" />
