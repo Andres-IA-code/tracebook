@@ -6,7 +6,9 @@ import { ClipboardCheck, FileText, FolderKanban, KeyRound, Library, ShieldCheck,
 import { PublicFooter, PublicHeader } from "@/components/public-site";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { Button } from "@/components/ui/button";
-import cuboHero from "@/assets/cubo-hero-v2.jpg";
+import cuboWebm from "@/assets/cubo-eje.webm.asset.json";
+import cuboMp4 from "@/assets/cubo-eje.mp4.asset.json";
+import cuboPoster from "@/assets/cubo-eje-poster.jpg.asset.json";
 
 
 export const Route = createFileRoute("/")({
@@ -18,6 +20,9 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Autorización firmada, hallazgos organizados e informe listo para entregar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [
+      { rel: "preload", as: "image", href: cuboPoster.url, fetchPriority: "high" },
     ],
   }),
   component: Landing,
@@ -40,7 +45,7 @@ const STEPS = [
 
 function Landing() {
   useScrollReveal();
-  const cubeRef = useRef<HTMLImageElement>(null);
+  const cubeRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const el = cubeRef.current;
@@ -60,11 +65,15 @@ function Landing() {
     const tick = () => {
       // Interpolación gradual para que el movimiento sea fluido
       current += (target - current) * 0.08;
-      const rotate = current * 360; // giro total a lo largo de la página
-      const driftX = Math.sin(current * Math.PI * 2) * 18; // vaivén lateral en vw
-      const driftY = Math.cos(current * Math.PI) * 10; // vaivén vertical en vh
-      const scale = 1 + Math.sin(current * Math.PI) * 0.25;
-      el.style.transform = `translate(calc(-50% + ${driftX}vw), calc(-50% + ${driftY}vh)) rotate(${rotate}deg) scale(${scale})`;
+      const duration = el.duration;
+      if (Number.isFinite(duration) && duration > 0) {
+        const t = current * duration;
+        if (Math.abs(el.currentTime - t) > 0.04) el.currentTime = t;
+      }
+      const driftX = Math.sin(current * Math.PI * 2) * 14; // vaivén lateral en vw
+      const driftY = Math.cos(current * Math.PI) * 8; // vaivén vertical en vh
+      const scale = 1 + Math.sin(current * Math.PI) * 0.2;
+      el.style.transform = `translate(calc(-50% + ${driftX}vw), calc(-50% + ${driftY}vh)) scale(${scale})`;
       raf = requestAnimationFrame(tick);
     };
 
@@ -85,7 +94,10 @@ function Landing() {
       <main>
         <section className="pub-wrap pub-hero">
           <div data-reveal className="pub-hero-main">
-            <img ref={cubeRef} src={cuboHero} alt="" aria-hidden="true" className="pub-hero-cube" width={900} height={900} />
+            <video ref={cubeRef} className="pub-hero-cube" poster={cuboPoster.url} preload="auto" muted playsInline disablePictureInPicture aria-hidden="true" width={640} height={360}>
+              <source src={cuboWebm.url} type="video/webm" />
+              <source src={cuboMp4.url} type="video/mp4" />
+            </video>
             <small className="pub-code">Ref. VRT-001 · Plataforma de pentesting</small>
             <h1>Gestión de pentest de principio a fin</h1>
             <p>Autorización firmada, hallazgos organizados e informe listo para entregar. Todo en un solo lugar.</p>
