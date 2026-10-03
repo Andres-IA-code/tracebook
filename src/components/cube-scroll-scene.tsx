@@ -86,8 +86,8 @@ export function CubeScrollScene() {
         className="cube-scroll-poster"
         src={cubePoster.url}
         alt=""
-        width={800}
-        height={800}
+        width={640}
+        height={360}
         fetchPriority="high"
         decoding="async"
         onLoad={(event) => {
