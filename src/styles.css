@@ -518,7 +518,7 @@ input, textarea, select { text-transform: none; font-size: 13px; }
 .pub-page, .pub-auth { min-height: 100vh; background: var(--background); color: var(--foreground); font-family: "Archivo Narrow", sans-serif; }
 .pub-landing { position: relative; isolation: isolate; }
 .pub-landing > header, .pub-landing > main, .pub-landing > footer { position: relative; z-index: 1; }
-.cube-scroll-scene { position: fixed; z-index: 0; top: 68px; left: 0; width: min(44vw, 640px); height: calc(100vh - 68px); overflow: hidden; pointer-events: none; opacity: 1; }
+.cube-scroll-scene { position: fixed; z-index: 0; top: 0; left: 0; width: min(44vw, 640px); height: 100vh; overflow: hidden; pointer-events: none; opacity: 1; }
 .cube-scroll-scene::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, var(--foreground) 6%, transparent) 50%, transparent 70%); background-size: 200% 100%; animation: cube-scene-loading 1.6s ease-in-out infinite; }
 .cube-scroll-scene.is-ready::before { display: none; }
 @keyframes cube-scene-loading { from { background-position: 180% 0; } to { background-position: -80% 0; } }
@@ -587,7 +587,7 @@ input, textarea, select { text-transform: none; font-size: 13px; }
   .pub-steps li { border-right: 0; border-bottom: 1px solid var(--border); }
 }
 @media (max-width: 760px), (prefers-reduced-motion: reduce) {
-  .cube-scroll-scene { position: absolute; width: 72vw; height: min(72vw, 560px); top: 68px; left: 0; }
+  .cube-scroll-scene { position: absolute; width: 72vw; height: min(72vw, 560px); top: 0; left: 0; }
   .cube-scroll-video { display: none; }
   .cube-scroll-poster { opacity: 1 !important; }
 }
