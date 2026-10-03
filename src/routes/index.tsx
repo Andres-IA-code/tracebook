@@ -64,15 +64,16 @@ function Landing() {
 
     const tick = () => {
       // Interpolación gradual para que el movimiento sea fluido
-      current += (target - current) * 0.08;
+      current += (target - current) * 0.045;
       const duration = el.duration;
       if (Number.isFinite(duration) && duration > 0) {
         const t = current * duration;
-        if (Math.abs(el.currentTime - t) > 0.04) el.currentTime = t;
+        if (Math.abs(el.currentTime - t) > 0.03) el.currentTime = t;
       }
-      const driftX = Math.sin(current * Math.PI * 2) * 14; // vaivén lateral en vw
-      const driftY = Math.cos(current * Math.PI) * 8; // vaivén vertical en vh
-      const scale = 1 + Math.sin(current * Math.PI) * 0.2;
+      // Vaivén suave que arranca y termina en cero (sin desplazamiento inicial)
+      const driftX = Math.sin(current * Math.PI * 2) * 10; // vw
+      const driftY = Math.sin(current * Math.PI) * 6; // vh
+      const scale = 1 + Math.sin(current * Math.PI) * 0.15;
       el.style.transform = `translate(calc(-50% + ${driftX}vw), calc(-50% + ${driftY}vh)) scale(${scale})`;
       raf = requestAnimationFrame(tick);
     };
