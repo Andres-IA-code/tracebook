@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { ClipboardCheck, FileText, FolderKanban, KeyRound, Library, ShieldCheck, HardDrive, Lock } from "lucide-react";
 
 import { PublicFooter, PublicHeader } from "@/components/public-site";
+import { CubeScrollScene } from "@/components/cube-scroll-scene";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { Button } from "@/components/ui/button";
 
@@ -39,6 +40,7 @@ function Landing() {
   useScrollReveal();
   return (
     <div className="pub-page pub-landing">
+      <CubeScrollScene />
       <PublicHeader />
       <main>
         <section className="pub-wrap pub-hero">
