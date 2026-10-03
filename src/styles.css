@@ -580,10 +580,9 @@ input, textarea, select { text-transform: none; font-size: 13px; }
   .pub-grid, .pub-steps { grid-template-columns: 1fr; }
   .pub-steps li { border-right: 0; border-bottom: 1px solid var(--border); }
 }
-@media (max-width: 760px), (prefers-reduced-motion: reduce) {
+@media (max-width: 760px) {
   .cube-scroll-scene { position: absolute; width: 72vw; height: min(72vw, 560px); top: 0; left: 0; }
-  .cube-scroll-video { display: none; }
-  .cube-scroll-poster { opacity: 1 !important; }
+  .cube-scroll-poster { opacity: 1; }
 }
 @media (max-width: 520px) { .pub-actions .pub-outline-hide, .pub-header .pub-actions a:first-child { display: none; } }
 
