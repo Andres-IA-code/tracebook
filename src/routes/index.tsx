@@ -5,7 +5,7 @@ import { ClipboardCheck, FileText, FolderKanban, KeyRound, Library, ShieldCheck,
 import { PublicFooter, PublicHeader } from "@/components/public-site";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { Button } from "@/components/ui/button";
-import cuboHero from "@/assets/cubo-hero.jpg.asset.json";
+import cuboHero from "@/assets/cubo-hero-v2.jpg";
 
 
 export const Route = createFileRoute("/")({
@@ -45,7 +45,7 @@ function Landing() {
       <main>
         <section className="pub-wrap pub-hero">
           <div data-reveal className="pub-hero-main">
-            <img src={cuboHero.url} alt="" aria-hidden="true" className="pub-hero-cube" width={900} height={900} />
+            <img src={cuboHero} alt="" aria-hidden="true" className="pub-hero-cube" width={900} height={900} />
             <small className="pub-code">Ref. VRT-001 · Plataforma de pentesting</small>
             <h1>Gestión de pentest de principio a fin</h1>
             <p>Autorización firmada, hallazgos organizados e informe listo para entregar. Todo en un solo lugar.</p>
