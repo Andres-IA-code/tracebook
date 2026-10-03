@@ -581,6 +581,6 @@ input, textarea, select { text-transform: none; font-size: 13px; }
 .pub-landing { position: relative; isolation: isolate; background: transparent; }
 .pub-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: var(--background); }
 .pub-bg-media { width: 100%; height: 100%; object-fit: cover; opacity: .22; mix-blend-mode: multiply; filter: blur(2px); transform: scale(1.02); pointer-events: none; }
-.pub-bg-veil { position: absolute; inset: 0; background: var(--background); opacity: .20; pointer-events: none; }
+.pub-bg-veil { position: absolute; inset: 0; background: var(--background); opacity: .08; pointer-events: none; }
 .pub-landing .pub-header { background: var(--background); }
 .pub-landing main > .pub-section { background: color-mix(in oklab, var(--background) 28%, transparent); }
