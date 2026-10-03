@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import cubePoster from "@/assets/vertice-cube-poster.jpg.asset.json";
-import cubeVideo from "@/assets/vertice-cube-scroll.mp4.asset.json";
+import cubeVideoMp4 from "@/assets/vertice-cube-scroll.mp4.asset.json";
+import cubeVideoWebm from "@/assets/vertice-cube-scroll.webm.asset.json";
 
 export function CubeScrollScene() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,7 +53,6 @@ export function CubeScrollScene() {
       <video
         ref={videoRef}
         className={`cube-scroll-video ${videoReady && hasScrolled ? "is-visible" : ""}`}
-        src={cubeVideo.url}
         muted
         playsInline
         preload="auto"
@@ -62,7 +62,10 @@ export function CubeScrollScene() {
           event.currentTarget.currentTime = 0;
           setVideoReady(true);
         }}
-      />
+      >
+        <source src={cubeVideoWebm.url} type="video/webm" />
+        <source src={cubeVideoMp4.url} type="video/mp4" />
+      </video>
     </div>
   );
 }
