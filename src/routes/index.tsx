@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import { ClipboardCheck, FileText, FolderKanban, KeyRound, Library, ShieldCheck, HardDrive, Lock } from "lucide-react";
 
@@ -39,13 +40,53 @@ const STEPS = [
 
 function Landing() {
   useScrollReveal();
+  const cubeRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const el = cubeRef.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let raf = 0;
+    let current = 0;
+    let target = 0;
+
+    const measure = () => {
+      const doc = document.documentElement;
+      const max = Math.max(1, doc.scrollHeight - window.innerHeight);
+      target = Math.min(1, Math.max(0, window.scrollY / max));
+    };
+
+    const tick = () => {
+      // Interpolación gradual para que el movimiento sea fluido
+      current += (target - current) * 0.08;
+      const rotate = current * 160; // giro total a lo largo de la página
+      const driftY = current * 45; // porcentaje de desplazamiento vertical
+      const scale = 1 + current * 0.35;
+      const opacity = 0.55 - current * 0.25;
+      el.style.transform = `translate(-50%, calc(-55% + ${driftY}px)) rotate(${rotate}deg) scale(${scale})`;
+      el.style.opacity = String(Math.max(0.15, opacity));
+      raf = requestAnimationFrame(tick);
+    };
+
+    measure();
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
   return (
     <div className="pub-page pub-landing">
       <PublicHeader />
       <main>
         <section className="pub-wrap pub-hero">
           <div data-reveal className="pub-hero-main">
-            <img src={cuboHero} alt="" aria-hidden="true" className="pub-hero-cube" width={900} height={900} />
+            <img ref={cubeRef} src={cuboHero} alt="" aria-hidden="true" className="pub-hero-cube" width={900} height={900} />
             <small className="pub-code">Ref. VRT-001 · Plataforma de pentesting</small>
             <h1>Gestión de pentest de principio a fin</h1>
             <p>Autorización firmada, hallazgos organizados e informe listo para entregar. Todo en un solo lugar.</p>
