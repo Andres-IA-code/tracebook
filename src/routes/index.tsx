@@ -91,7 +91,10 @@ function Landing() {
       <main>
         <section className="pub-wrap pub-hero">
           <div data-reveal className="pub-hero-main">
-            <img ref={cubeRef} src={cuboHero} alt="" aria-hidden="true" className="pub-hero-cube" width={900} height={900} />
+            <video ref={cubeRef} className="pub-hero-cube" poster={cuboPoster.url} preload="auto" muted playsInline disablePictureInPicture aria-hidden="true" width={640} height={360}>
+              <source src={cuboWebm.url} type="video/webm" />
+              <source src={cuboMp4.url} type="video/mp4" />
+            </video>
             <small className="pub-code">Ref. VRT-001 · Plataforma de pentesting</small>
             <h1>Gestión de pentest de principio a fin</h1>
             <p>Autorización firmada, hallazgos organizados e informe listo para entregar. Todo en un solo lugar.</p>
