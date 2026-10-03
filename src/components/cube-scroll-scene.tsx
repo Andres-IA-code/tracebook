@@ -23,8 +23,8 @@ export function CubeScrollScene() {
       const scrollRange = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
       const progress = Math.min(Math.max(window.scrollY / scrollRange, 0), 1);
       const nextTime = progress * Math.max(video.duration - 0.04, 0);
-      if (Math.abs(video.currentTime - nextTime) > 0.025) video.currentTime = nextTime;
       setHasScrolled(progress > 0.002);
+      if (Math.abs(video.currentTime - nextTime) > 0.025) video.currentTime = nextTime;
     };
 
     const requestSync = () => {
