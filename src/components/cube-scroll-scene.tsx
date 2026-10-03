@@ -35,8 +35,8 @@ export function CubeScrollScene() {
       if (!video) return;
 
       const diff = targetTime - displayedTime;
-      if (Math.abs(diff) > 0.005) {
-        displayedTime += diff * 0.12;
+      if (Math.abs(diff) > 0.003) {
+        displayedTime += diff * 0.06;
         video.currentTime = displayedTime;
         frameRef.current = window.requestAnimationFrame(animate);
       } else {
