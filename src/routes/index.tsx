@@ -70,8 +70,10 @@ function Landing() {
       current += (target - current) * (1 - Math.exp(-dt * 6));
 
       const duration = el.duration;
-      if (Number.isFinite(duration) && duration > 0 && el.readyState >= 1) {
-        el.currentTime = Math.min(duration - 0.001, current * duration);
+      if (Number.isFinite(duration) && duration > 0 && el.readyState >= 1 && !el.seeking) {
+        const t = Math.min(duration - 0.001, current * duration);
+        // Solo busca si cambia al menos medio cuadro (24 fps) para no saturar el decodificador
+        if (Math.abs(el.currentTime - t) > 1 / 48) el.currentTime = t;
       }
       // Solo gira sobre su propio eje: sin desplazamiento ni cambio de escala
       el.style.transform = "translate(-50%, -50%)";
