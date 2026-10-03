@@ -95,6 +95,7 @@ export function CubeScrollScene() {
         onLoadedMetadata={(event) => {
           event.currentTarget.pause();
           event.currentTarget.currentTime = 0;
+          sceneRef.current?.classList.add("is-ready");
           window.dispatchEvent(new Event("scroll"));
         }}
       >
