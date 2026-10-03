@@ -11,6 +11,16 @@ export function CubeScrollScene() {
   const frameRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
+    // Si la imagen ya terminó de cargar antes de hidratar, el evento onLoad
+    // no llega a dispararse: marcamos el póster como listo manualmente.
+    const img = posterRef.current;
+    if (img?.complete && img.naturalWidth > 0) {
+      img.classList.add("is-loaded");
+      sceneRef.current?.classList.add("is-ready");
+    }
+  }, []);
+
+  useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const smallScreen = window.matchMedia("(max-width: 760px)");
     if (reduceMotion.matches || smallScreen.matches) return;
