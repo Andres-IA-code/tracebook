@@ -522,9 +522,12 @@ input, textarea, select { text-transform: none; font-size: 13px; }
   -webkit-mask-image: radial-gradient(ellipse 70% 70% at 38% 50%, #000 30%, transparent 72%);
   mask-image: radial-gradient(ellipse 70% 70% at 38% 50%, #000 30%, transparent 72%);
 }
+.cube-scroll-scene::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, var(--foreground) 6%, transparent) 50%, transparent 70%); background-size: 200% 100%; animation: cube-scene-loading 1.6s ease-in-out infinite; }
+.cube-scroll-scene.is-ready::before { display: none; }
+@keyframes cube-scene-loading { from { background-position: 180% 0; } to { background-position: -80% 0; } }
 .cube-scroll-scene img, .cube-scroll-scene video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
-.cube-scroll-poster, .cube-scroll-video { opacity: 0; transition: opacity .2s linear; }
-.cube-scroll-poster { opacity: 1; }
+.cube-scroll-poster, .cube-scroll-video { opacity: 0; transition: opacity .3s ease; }
+.cube-scroll-poster.is-loaded { opacity: 1; }
 .cube-scroll-poster.is-hidden { opacity: 0; }
 .cube-scroll-video.is-visible { opacity: 1; }
 .pub-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
