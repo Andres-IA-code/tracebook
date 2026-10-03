@@ -15,3 +15,4 @@
 - [x] Remove light mode and keep the interface permanently dark
 - [x] Add customizable LaTeX report branding and team contact details
 - [x] Add public landing page and email/password login gating /app
+- [x] Add the right-side cube scrollytelling scene to the public landing

@@ -19,3 +19,4 @@
 - Print reports/authorizations through a hidden in-page iframe (`src/lib/print-html.ts`), because Electron blocks new blank windows.
 - Keep LaTeX report branding in the persisted workspace settings and embed custom logos into the generated source so exports remain portable.
 - Web routes: `/` public landing, `/login` `/registro` `/recuperar` `/restablecer` auth via Lovable Cloud, `/app` renders VerticeApp behind a client-side session guard; desktop entry still mounts VerticeApp directly without auth — workspace data stays local, auth only gates web access.
+- Keep the public landing's cube video paused and map its timeline to document scroll; use the static poster on small screens and for reduced motion.
