@@ -531,7 +531,7 @@ input, textarea, select { text-transform: none; font-size: 13px; }
 .pub-hero { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; padding-top: 72px; padding-bottom: 72px; align-items: end; border-bottom: 3px solid var(--foreground); }
 .pub-hero h1 { font-family: Oswald, sans-serif; font-weight: 300; text-transform: uppercase; font-size: clamp(48px, 8vw, 112px); line-height: .9; margin: 14px 0 22px; color: var(--foreground); }
 .pub-hero-main { position: relative; isolation: isolate; }
-.pub-hero-main > :not(.pub-hero-cube) { position: relative; z-index: 1; }
+.pub-hero-main > :not(.pub-hero-cube), .pub-hero > :not(.pub-hero-cube) { position: relative; z-index: 1; }
 .pub-hero-cube { position: fixed; z-index: 0; top: 34%; left: 38%; width: min(620px, 85vw); height: auto; aspect-ratio: 16 / 9; object-fit: cover; transform: translate(-50%, -50%); opacity: 0.55; pointer-events: none; -webkit-mask-image: radial-gradient(closest-side, #000 65%, transparent 100%); mask-image: radial-gradient(closest-side, #000 65%, transparent 100%); user-select: none; will-change: transform; }
 .pub-hero p { font-size: 20px; max-width: 560px; margin: 0 0 28px; color: var(--muted-foreground); }
 .pub-spec { border: 1px solid var(--border); background: var(--card); }
