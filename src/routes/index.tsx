@@ -6,7 +6,7 @@ import { PublicFooter, PublicHeader } from "@/components/public-site";
 import { CubeScrollScene } from "@/components/cube-scroll-scene";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { Button } from "@/components/ui/button";
-import cubePoster from "@/assets/vertice-cube-poster.jpg.asset.json";
+import cubeImage from "@/assets/vertice-cube-static.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      { rel: "preload", as: "image", href: cubePoster.url, fetchpriority: "high" },
+      { rel: "preload", as: "image", href: cubeImage.url, fetchPriority: "high" },
     ],
   }),
   component: Landing,
