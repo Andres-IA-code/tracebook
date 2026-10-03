@@ -5,7 +5,7 @@ import { ClipboardCheck, FileText, FolderKanban, KeyRound, Library, ShieldCheck,
 import { PublicFooter, PublicHeader } from "@/components/public-site";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { Button } from "@/components/ui/button";
-import cuboHero from "@/assets/cubo-hero.jpg.asset.json";
+import cuboHero from "@/assets/cubo-hero-v2.jpg";
 
 
 export const Route = createFileRoute("/")({
