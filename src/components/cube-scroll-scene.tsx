@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import cubePoster from "@/assets/vertice-cube-poster.jpg.asset.json";
 import cubeVideoMp4 from "@/assets/vertice-cube-scroll.mp4.asset.json";
@@ -8,7 +8,6 @@ export function CubeScrollScene() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const posterRef = useRef<HTMLImageElement>(null);
   const frameRef = useRef<number | undefined>(undefined);
-  const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -62,7 +61,6 @@ export function CubeScrollScene() {
         onLoadedMetadata={(event) => {
           event.currentTarget.pause();
           event.currentTarget.currentTime = 0;
-          setVideoReady(true);
           window.dispatchEvent(new Event("scroll"));
         }}
       >
