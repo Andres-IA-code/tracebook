@@ -5,6 +5,7 @@ import cubeVideoMp4 from "@/assets/vertice-cube-scroll.mp4.asset.json";
 import cubeVideoWebm from "@/assets/vertice-cube-scroll.webm.asset.json";
 
 export function CubeScrollScene() {
+  const sceneRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const posterRef = useRef<HTMLImageElement>(null);
   const frameRef = useRef<number | undefined>(undefined);
@@ -69,14 +70,20 @@ export function CubeScrollScene() {
   }, []);
 
   return (
-    <div className="cube-scroll-scene" aria-hidden="true">
+    <div ref={sceneRef} className="cube-scroll-scene" aria-hidden="true">
       <img
         ref={posterRef}
         className="cube-scroll-poster"
         src={cubePoster.url}
         alt=""
+        width={640}
+        height={360}
         fetchPriority="high"
         decoding="async"
+        onLoad={(event) => {
+          event.currentTarget.classList.add("is-loaded");
+          sceneRef.current?.classList.add("is-ready");
+        }}
       />
       <video
         ref={videoRef}
