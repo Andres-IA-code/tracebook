@@ -73,11 +73,8 @@ function Landing() {
       if (Number.isFinite(duration) && duration > 0 && el.readyState >= 1) {
         el.currentTime = Math.min(duration - 0.001, current * duration);
       }
-      // Vaivén suave que arranca y termina en cero (sin desplazamiento inicial)
-      const driftX = Math.sin(current * Math.PI * 2) * 8; // vw
-      const driftY = Math.sin(current * Math.PI) * 5; // vh
-      const scale = 1 + Math.sin(current * Math.PI) * 0.12;
-      el.style.transform = `translate(calc(-50% + ${driftX}vw), calc(-50% + ${driftY}vh)) scale(${scale})`;
+      // Solo gira sobre su propio eje: sin desplazamiento ni cambio de escala
+      el.style.transform = "translate(-50%, -50%)";
       raf = requestAnimationFrame(tick);
     };
 
