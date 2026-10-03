@@ -6,6 +6,7 @@ import { PublicFooter, PublicHeader } from "@/components/public-site";
 import { CubeScrollScene } from "@/components/cube-scroll-scene";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { Button } from "@/components/ui/button";
+import cubePoster from "@/assets/vertice-cube-poster.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,6 +17,9 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Autorización firmada, hallazgos organizados e informe listo para entregar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [
+      { rel: "preload", as: "image", href: cubePoster.url, fetchpriority: "high" },
     ],
   }),
   component: Landing,
