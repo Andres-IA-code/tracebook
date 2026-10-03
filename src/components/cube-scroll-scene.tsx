@@ -10,7 +10,6 @@ export function CubeScrollScene() {
         alt=""
         width={1240}
         height={1240}
-        fetchPriority="high"
         decoding="async"
       />
     </div>
