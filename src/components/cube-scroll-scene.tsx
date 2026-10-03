@@ -75,6 +75,8 @@ export function CubeScrollScene() {
         className="cube-scroll-poster"
         src={cubePoster.url}
         alt=""
+        fetchPriority="high"
+        decoding="async"
       />
       <video
         ref={videoRef}
