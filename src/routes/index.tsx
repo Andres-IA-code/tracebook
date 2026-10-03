@@ -3,7 +3,6 @@ import type { CSSProperties } from "react";
 import { ClipboardCheck, FileText, FolderKanban, KeyRound, Library, ShieldCheck, HardDrive, Lock } from "lucide-react";
 
 import { PublicFooter, PublicHeader } from "@/components/public-site";
-import { ScrollVideoBackground } from "@/components/scroll-video-bg";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +39,6 @@ function Landing() {
   useScrollReveal();
   return (
     <div className="pub-page pub-landing">
-      <ScrollVideoBackground />
       <PublicHeader />
       <main>
         <section className="pub-wrap pub-hero">
