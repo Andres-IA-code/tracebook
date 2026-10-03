@@ -14,22 +14,47 @@ export function CubeScrollScene() {
     const smallScreen = window.matchMedia("(max-width: 760px)");
     if (reduceMotion.matches || smallScreen.matches) return;
 
-    const syncVideoToScroll = () => {
+    let targetTime = 0;
+    let displayedTime = 0;
+    let animating = false;
+
+    const animate = () => {
       frameRef.current = undefined;
+      const video = videoRef.current;
+      if (!video) return;
+
+      const diff = targetTime - displayedTime;
+      if (Math.abs(diff) > 0.005) {
+        displayedTime += diff * 0.12;
+        video.currentTime = displayedTime;
+        frameRef.current = window.requestAnimationFrame(animate);
+      } else {
+        displayedTime = targetTime;
+        video.currentTime = targetTime;
+        animating = false;
+      }
+    };
+
+    const startAnimation = () => {
+      if (animating) return;
+      animating = true;
+      if (frameRef.current === undefined) frameRef.current = window.requestAnimationFrame(animate);
+    };
+
+    const syncVideoToScroll = () => {
       const video = videoRef.current;
       if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
 
       const scrollRange = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
       const progress = Math.min(Math.max(window.scrollY / scrollRange, 0), 1);
-      const nextTime = progress * Math.max(video.duration - 0.04, 0);
+      targetTime = progress * Math.max(video.duration - 0.04, 0);
       video.classList.toggle("is-visible", progress > 0.002);
       posterRef.current?.classList.toggle("is-hidden", progress > 0.002);
-      if (Math.abs(video.currentTime - nextTime) > 0.025) video.currentTime = nextTime;
+      startAnimation();
     };
 
     const requestSync = () => {
-      if (frameRef.current !== undefined) return;
-      frameRef.current = window.requestAnimationFrame(syncVideoToScroll);
+      window.requestAnimationFrame(syncVideoToScroll);
     };
 
     window.addEventListener("scroll", requestSync, { passive: true });
