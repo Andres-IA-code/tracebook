@@ -10,10 +10,10 @@ import { authErrorMessage } from "@/hooks/use-auth";
 export const Route = createFileRoute("/recuperar")({
   head: () => ({
     meta: [
-      { title: "Recuperar contraseña — Vértice" },
-      { name: "description", content: "Recibe un enlace por correo para restablecer tu contraseña de Vértice." },
-      { property: "og:title", content: "Recuperar contraseña — Vértice" },
-      { property: "og:description", content: "Restablece el acceso a tu cuenta de Vértice." },
+      { title: "Recuperar contraseña — Brecha" },
+      { name: "description", content: "Recibe un enlace por correo para restablecer tu contraseña de Brecha." },
+      { property: "og:title", content: "Recuperar contraseña — Brecha" },
+      { property: "og:description", content: "Restablece el acceso a tu cuenta de Brecha." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

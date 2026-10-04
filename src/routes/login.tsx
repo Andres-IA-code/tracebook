@@ -10,9 +10,9 @@ import { authErrorMessage, useAuth } from "@/hooks/use-auth";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Iniciar sesión — Vértice" },
-      { name: "description", content: "Accede a tu espacio de trabajo de pentesting en Vértice." },
-      { property: "og:title", content: "Iniciar sesión — Vértice" },
+      { title: "Iniciar sesión — Brecha" },
+      { name: "description", content: "Accede a tu espacio de trabajo de pentesting en Brecha." },
+      { property: "og:title", content: "Iniciar sesión — Brecha" },
       { property: "og:description", content: "Accede a tu espacio de trabajo de pentesting." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
