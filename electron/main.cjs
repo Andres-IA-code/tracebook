@@ -1,7 +1,7 @@
 const { app, BrowserWindow, shell, ipcMain } = require("electron");
 const path = require("node:path");
 
-// Vértice is fully local: skip Chromium services that otherwise run during startup.
+// Brecha is fully local: skip Chromium services that otherwise run during startup.
 app.commandLine.appendSwitch("disable-background-networking");
 app.commandLine.appendSwitch("disable-component-update");
 app.commandLine.appendSwitch("disable-default-apps");

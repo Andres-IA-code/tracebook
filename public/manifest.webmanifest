@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Vértice — Gestión de Pentests",
-  "short_name": "Vértice",
+  "name": "Brecha — Gestión de pentest",
+  "short_name": "Brecha",
   "description": "Espacio de trabajo para gestionar proyectos, hallazgos, clientes e informes de pentesting.",
   "start_url": "/",
   "scope": "/",
