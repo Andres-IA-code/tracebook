@@ -15,6 +15,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RecuperarRouteImport } from './routes/recuperar'
 import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as RestablecerRouteImport } from './routes/restablecer'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +48,16 @@ const RestablecerRoute = RestablecerRouteImport.update({
   path: '/restablecer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +66,8 @@ export interface FileRoutesByFullPath {
   '/recuperar': typeof RecuperarRoute
   '/registro': typeof RegistroRoute
   '/restablecer': typeof RestablecerRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +76,8 @@ export interface FileRoutesByTo {
   '/recuperar': typeof RecuperarRoute
   '/registro': typeof RegistroRoute
   '/restablecer': typeof RestablecerRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,13 +87,30 @@ export interface FileRoutesById {
   '/recuperar': typeof RecuperarRoute
   '/registro': typeof RegistroRoute
   '/restablecer': typeof RestablecerRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/app' | '/login' | '/recuperar' | '/registro' | '/restablecer'
+    | '/'
+    | '/app'
+    | '/login'
+    | '/recuperar'
+    | '/registro'
+    | '/restablecer'
+    | '/robots.txt'
+    | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/login' | '/recuperar' | '/registro' | '/restablecer'
+  to:
+    | '/'
+    | '/app'
+    | '/login'
+    | '/recuperar'
+    | '/registro'
+    | '/restablecer'
+    | '/robots.txt'
+    | '/sitemap.xml'
   id:
     | '__root__'
     | '/'
@@ -86,6 +119,8 @@ export interface FileRouteTypes {
     | '/recuperar'
     | '/registro'
     | '/restablecer'
+    | '/robots.txt'
+    | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,6 +130,8 @@ export interface RootRouteChildren {
   RecuperarRoute: typeof RecuperarRoute
   RegistroRoute: typeof RegistroRoute
   RestablecerRoute: typeof RestablecerRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,6 +178,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RestablecerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -151,6 +202,8 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarRoute: RecuperarRoute,
   RegistroRoute: RegistroRoute,
   RestablecerRoute: RestablecerRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
