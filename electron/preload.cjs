@@ -1,5 +1,5 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("brechaDesktop", {
+contextBridge.exposeInMainWorld("vectorDesktop", {
   quit: () => ipcRenderer.send("app-quit"),
 });

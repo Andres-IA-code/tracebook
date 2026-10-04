@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 
 export function Logo() {
   return (
-    <Link to="/" className="pub-logo" aria-label="Brecha, inicio">
-      <span className="pub-mark" />BRECHA
+    <Link to="/" className="pub-logo" aria-label="Vector, inicio">
+      <span className="pub-mark" />VECTOR
     </Link>
   );
 }
@@ -43,7 +43,7 @@ export function PublicFooter() {
       <div className="pub-wrap pub-footer-inner">
         <Logo />
         <small>Gestión de pentest · Autorización, hallazgos e informes</small>
-        <small>© {new Date().getFullYear()} Brecha</small>
+        <small>© {new Date().getFullYear()} Vector</small>
       </div>
     </footer>
   );

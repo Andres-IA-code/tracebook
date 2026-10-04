@@ -10,9 +10,9 @@ import { authErrorMessage, useAuth } from "@/hooks/use-auth";
 export const Route = createFileRoute("/registro")({
   head: () => ({
     meta: [
-      { title: "Crear cuenta — Brecha" },
-      { name: "description", content: "Crea tu cuenta de Brecha y gestiona tus pentest de principio a fin." },
-      { property: "og:title", content: "Crear cuenta — Brecha" },
+      { title: "Crear cuenta — Vector" },
+      { name: "description", content: "Crea tu cuenta de Vector y gestiona tus pentest de principio a fin." },
+      { property: "og:title", content: "Crear cuenta — Vector" },
       { property: "og:description", content: "Crea tu cuenta y empieza a gestionar pentest." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
