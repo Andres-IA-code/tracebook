@@ -51,7 +51,7 @@ function BackToTop() {
       aria-label="Volver al inicio"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
     >
-      <ArrowUp size={18} strokeWidth={1.5} />
+      <ArrowUp size={30} strokeWidth={2.25} />
     </button>
   );
 }
