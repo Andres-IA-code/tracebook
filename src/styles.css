@@ -562,6 +562,9 @@ input, textarea, select { text-transform: none; font-size: 13px; }
 .pub-footer { border-top: 3px solid var(--foreground); padding: 28px 0; }
 .pub-footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .pub-footer small { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-foreground); }
+.pub-to-top { position: fixed; right: 22px; bottom: 22px; z-index: 40; width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--foreground); border-radius: 0; background: var(--card); color: var(--primary); cursor: pointer; box-shadow: 0 10px 30px color-mix(in oklab, var(--foreground) 14%, transparent); transition: background .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.pub-to-top:hover { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground, #fff); transform: translateY(-3px); box-shadow: 0 14px 34px color-mix(in oklab, var(--foreground) 20%, transparent); }
+.pub-to-top:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .pub-auth { display: flex; flex-direction: column; }
 .pub-auth-top { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
 .pub-auth-card { width: min(440px, calc(100% - 32px)); margin: 56px auto; background: var(--card); border: 1px solid var(--border); padding: 32px; display: flex; flex-direction: column; gap: 8px; }
