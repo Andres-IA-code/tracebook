@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Brecha — Gestión de pentest",
-  "short_name": "Brecha",
+  "name": "Vector — Gestión de pentest",
+  "short_name": "Vector",
   "description": "Espacio de trabajo para gestionar proyectos, hallazgos, clientes e informes de pentesting.",
   "start_url": "/",
   "scope": "/",

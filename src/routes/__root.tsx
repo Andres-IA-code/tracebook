@@ -78,13 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Brecha" },
+      { title: "Vector" },
       { name: "description", content: "Plataforma para la gestión de pentest." },
-      { name: "author", content: "Brecha" },
+      { name: "author", content: "Vector" },
       { name: "theme-color", content: "#141414" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Brecha" },
+      { name: "apple-mobile-web-app-title", content: "Vector" },
     ],
     links: [
       {

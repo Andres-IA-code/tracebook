@@ -14,9 +14,9 @@ import cuboPoster from "@/assets/cubo-eje-poster.jpg.asset.json";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Brecha — Gestión de pentest de principio a fin" },
+      { title: "Vector — Gestión de pentest de principio a fin" },
       { name: "description", content: "Autorización firmada, hallazgos organizados e informe listo para entregar. Todo en un solo lugar." },
-      { property: "og:title", content: "Brecha — Gestión de pentest de principio a fin" },
+      { property: "og:title", content: "Vector — Gestión de pentest de principio a fin" },
       { property: "og:description", content: "Autorización firmada, hallazgos organizados e informe listo para entregar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -101,7 +101,7 @@ function Landing() {
               <source src={cuboMp4.url} type="video/mp4" />
             </video>
           <div data-reveal className="pub-hero-main">
-            <small className="pub-code">Ref. BRH-001 · Plataforma de pentesting</small>
+            <small className="pub-code">Ref. VCT-001 · Plataforma de pentesting</small>
             <h1>Gestión de pentest de principio a fin</h1>
             <p>Autorización firmada, hallazgos organizados e informe listo para entregar. Todo en un solo lugar.</p>
             <div className="pub-cta">

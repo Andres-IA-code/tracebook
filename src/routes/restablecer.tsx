@@ -10,9 +10,9 @@ import { authErrorMessage } from "@/hooks/use-auth";
 export const Route = createFileRoute("/restablecer")({
   head: () => ({
     meta: [
-      { title: "Nueva contraseña — Brecha" },
-      { name: "description", content: "Crea una nueva contraseña para tu cuenta de Brecha." },
-      { property: "og:title", content: "Nueva contraseña — Brecha" },
+      { title: "Nueva contraseña — Vector" },
+      { name: "description", content: "Crea una nueva contraseña para tu cuenta de Vector." },
+      { property: "og:title", content: "Nueva contraseña — Vector" },
       { property: "og:description", content: "Crea una nueva contraseña para tu cuenta." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
