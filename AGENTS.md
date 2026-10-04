@@ -12,6 +12,7 @@
 ## Project architecture
 
 - Keep Brecha as a client-side root-route workspace with no fabricated records; user-entered operational data persists locally in the browser so the workspace remains functional without backend setup.
+- Keep the product name Brecha across web, desktop, manifests, exports and the Electron bridge; keep the local storage keys (`vertice-workspace-data`, `vertice-settings`, `vertice-audit`) unchanged, because renaming them would silently wipe data people already saved.
 - Keep the desktop build as a separate static Vite entry consumed by Electron, so the web SSR build and installed app share the same workspace component without changing deployment behavior.
 - Keep desktop startup local-only and package its application files into ASAR to minimize startup filesystem work.
 - Keep Brecha permanently dark-themed across web and desktop; do not expose a light-mode switch.
