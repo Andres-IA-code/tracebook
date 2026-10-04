@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { ClipboardCheck, FileText, FolderKanban, KeyRound, Library, ShieldCheck, HardDrive, Lock } from "lucide-react";
+import { ArrowUp, ClipboardCheck, FileText, FolderKanban, KeyRound, Library, ShieldCheck, HardDrive, Lock } from "lucide-react";
 
 import { PublicFooter, PublicHeader } from "@/components/public-site";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
@@ -42,6 +42,19 @@ const STEPS = [
   { n: "02", title: "Registra", text: "Documenta cada hallazgo con su severidad y evidencia mientras pruebas." },
   { n: "03", title: "Entrega", text: "Genera el informe final con la identidad de tu equipo y envíalo." },
 ];
+
+function BackToTop() {
+  return (
+    <button
+      type="button"
+      className="pub-to-top"
+      aria-label="Volver al inicio"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+    >
+      <ArrowUp size={18} strokeWidth={1.5} />
+    </button>
+  );
+}
 
 function Landing() {
   useScrollReveal();
@@ -149,6 +162,7 @@ function Landing() {
           <div className="pub-banner" data-reveal><div><small>Empieza hoy</small><strong>Tu próximo informe, listo</strong></div><Button asChild size="lg"><Link to="/registro">Crear cuenta</Link></Button></div>
         </section>
       </main>
+      <BackToTop />
       <PublicFooter />
     </div>
   );
