@@ -100,7 +100,7 @@
     "vite": "8.1.5"
   },
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "description": "Gestión local de pentest",
-  "author": "Vector contributors"
+  "author": "La Papa"
 }

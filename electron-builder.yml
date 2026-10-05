@@ -28,6 +28,6 @@ mac:
 linux:
   icon: public/icons/icon-512.png
   category: Development
-  maintainer: Vector contributors
+  maintainer: La Papa
   target: [AppImage, deb]
 artifactName: "${productName}-${version}-${os}-${arch}.${ext}"

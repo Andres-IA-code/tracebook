@@ -3,6 +3,6 @@ export const BRAND = {
   name: "Vector",
   version: "0.1.0",
   tagline: "Gestión de pentest",
-  license: "MIT",
+  license: "AGPL-3.0",
   repository: "https://github.com/USUARIO/REPOSITORIO",
 } as const;

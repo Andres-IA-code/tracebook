@@ -47,10 +47,15 @@ En **Configuración → Exportar datos** se genera un archivo JSON con todo tu e
 ## Aviso legal
 Esta herramienta sirve para documentar pruebas de seguridad **autorizadas** por escrito. Su uso contra sistemas sin permiso es responsabilidad exclusiva del usuario.
 
+## Contribuir
+Consulta [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Licencia
-MIT — ver [LICENSE](LICENSE).
+AGPL-3.0 — puedes usar, estudiar, modificar y redistribuir el código, siempre que las versiones modificadas que distribuyas o pongas a disposición de otros se publiquen bajo la misma licencia. Ver [LICENSE](LICENSE).
+
+¿Necesitas usarlo bajo otros términos (por ejemplo, integrarlo en un producto cerrado)? Contacta al autor para una licencia comercial.
 
 ---
 
 ## English summary
-Vector is an open-source, fully offline desktop app (Electron) to manage authorized penetration tests: projects, signed authorizations, findings, template library, reports (LaTeX/PDF/Word/HTML/JSON) and an audit log. No accounts, no telemetry, no network access — data stays on your machine. Installers are unsigned: on Windows use *More info → Run anyway*; on macOS right-click → *Open*. Build with `bun install && bun run dist:<win|mac|linux>`. Licensed under MIT. Use only for authorized testing.
+Vector is an open-source, fully offline desktop app (Electron) to manage authorized penetration tests: projects, signed authorizations, findings, template library, reports (LaTeX/PDF/Word/HTML/JSON) and an audit log. No accounts, no telemetry, no network access — data stays on your machine. Installers are unsigned: on Windows use *More info → Run anyway*; on macOS right-click → *Open*. Build with `bun install && bun run dist:<win|mac|linux>`. Licensed under the GNU AGPL v3 (AGPL-3.0-or-later); commercial licenses available from the author. Use only for authorized testing.
