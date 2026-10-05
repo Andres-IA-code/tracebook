@@ -248,13 +248,13 @@ export function VectorApp() {
     <input ref={importInput} type="file" accept="application/json,.json" hidden aria-label="Archivo de respaldo" onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; void onImportFile(file); }} />
     {importError ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setImportError(""); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-error-title">
       <div className="modal-head"><div><small>Importar datos</small><h2 id="import-error-title">Archivo no válido</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setImportError("")}><X /></Button></div>
-      <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> {importError}</p>
+      <form onSubmit={event => { event.preventDefault(); setImportError(""); }}><p><AlertTriangle style={{display:"inline",width:14,height:14}} /> {importError}</p>
       <p>Usa un archivo generado con “Exportar datos”.</p>
-      <div className="modal-actions"><Button type="button" onClick={() => setImportError("")}>Entendido</Button></div>
+      <div className="modal-actions"><Button type="submit">Entendido</Button></div></form>
     </section></div> : null}
     {pendingImport ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingImport(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
       <div className="modal-head"><div><small>Importar datos</small><h2 id="import-title">{pendingImport.confirmReplace ? "¿Reemplazar todo?" : "Ya tienes datos cargados"}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingImport(null)}><X /></Button></div>
-      {pendingImport.confirmReplace ? <>
+      <form onSubmit={event => event.preventDefault()}>{pendingImport.confirmReplace ? <>
         <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrarán <b>todos</b> los datos actuales ({countOf({ ...data, authorizations: data.authorizations ?? [] })}) y la configuración, y se reemplazarán por los del archivo.</p>
         <p>Esta acción no se puede deshacer. Exporta un respaldo antes si lo necesitas.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingImport(null)}>Cancelar</Button><Button type="button" onClick={() => applyImport(pendingImport.payload, "replace", pendingImport.name)}>Sí, reemplazar todo</Button></div>
@@ -262,7 +262,7 @@ export function VectorApp() {
         <p>El archivo <b>{pendingImport.name}</b> contiene {countOf(pendingImport.payload.data)}.</p>
         <p><b>Combinar</b> agrega solo los registros nuevos. <b>Reemplazar todo</b> borra los datos actuales y restaura también la configuración.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingImport(null)}>Cancelar</Button><Button type="button" variant="outline" onClick={() => setPendingImport({ ...pendingImport, confirmReplace: true })}>Reemplazar todo</Button><Button type="button" onClick={() => applyImport(pendingImport.payload, "merge", pendingImport.name)}>Combinar</Button></div>
-      </>}
+      </>}</form>
     </section></div> : null}
     {pendingReset ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingReset(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="reset-title">
       <div className="modal-head"><div><small>Configuración</small><h2 id="reset-title">Restablecer configuración</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingReset(false)}><X /></Button></div>
