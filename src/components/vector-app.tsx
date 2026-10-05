@@ -1,3 +1,4 @@
+import { BRAND } from "@/brand";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
@@ -46,7 +47,7 @@ function normalizeData(parsed: Partial<DataState>): DataState {
   return next;
 }
 function exportBackup(data: DataState, settings: SettingsState) {
-  const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: "Vector" }, null, 2);
+  const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: BRAND.name, version: BRAND.version }, null, 2);
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
   const a = document.createElement("a"); a.href = url; a.download = `vector-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -77,7 +78,7 @@ function EmptyState({ icon: Icon, title, text, action }: { icon: typeof FolderOp
   return <div className="empty-state"><span><Icon /></span><h3>{title}</h3><p>{text}</p>{action}</div>;
 }
 
-export function VectorApp({ userEmail, onSignOut }: { userEmail?: string | undefined; onSignOut?: (() => void) | undefined } = {}) {
+export function VectorApp() {
   const [view, setView] = useState<View>("panel");
   const [mobileNav, setMobileNav] = useState(false);
   const [notice, setNotice] = useState("");
@@ -172,13 +173,13 @@ export function VectorApp({ userEmail, onSignOut }: { userEmail?: string | undef
   const pendingReports = data.projects.filter(project => project.status === "En revisión").length;
   return <div className="app-shell">
     <aside className={cn("sidebar", mobileNav && "sidebar-open")}>
-      <div className="brand"><span className="brand-mark" />Vector<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
-      <button className="org-switcher" onClick={() => go("configuracion")}><span className="org-avatar">{initials(settings.organization || "Vector")}</span><span><b>{settings.organization || "Mi consultora"}</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
+      <div className="brand"><span className="brand-mark" />{BRAND.name}<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
+      <button className="org-switcher" onClick={() => go("configuracion")}><span className="org-avatar">{initials(settings.organization || BRAND.name)}</span><span><b>{settings.organization || "Mi consultora"}</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
       <nav aria-label="Navegación principal">{navItems.map(([key,label,Icon]) => <button key={key} className={cn("nav-item", view === key && "active")} onClick={() => go(key)}><Icon /><span>{label}</span></button>)}</nav>
-      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.vectorDesktop?.quit()}><LogOut /><span>Salir</span></button> : null}{onSignOut ? <button className="nav-item nav-exit" onClick={onSignOut}><LogOut /><span>Cerrar sesión</span></button> : null}<div className="profile"><span>{initials(settings.userName || userEmail || "Usuario")}</span><div><b>{settings.userName || userEmail || "Usuario"}</b><small>{settings.role}</small></div></div></div>
+      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.vectorDesktop?.quit()}><LogOut /><span>Salir</span></button> : null}<div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
     </aside>
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
-    <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />Vector</div></div>
+    <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />{BRAND.name}</div></div>
       <main className="page">
         {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} exportData={doExport} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
@@ -269,7 +270,7 @@ function buildReportHtml(project: Project, list: Finding[], settings: SettingsSt
   const esc = (s: string) => (s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
   const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
   const date = new Date().toLocaleDateString("es-AR");
-  const org = settings.organization || "Vector";
+  const org = settings.organization || BRAND.name;
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe — ${esc(project.name)}</title><style>body{font-family:Georgia,serif;max-width:760px;margin:40px auto;color:#141414;line-height:1.5}h1{font-size:24px;border-bottom:3px solid #D9641E;padding-bottom:8px}h2{font-size:17px;margin-top:28px;color:#41423A}h3{font-size:15px;margin:18px 0 4px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:13px}th{background:#ECE2D2}.f{border-left:3px solid #D9641E;padding-left:12px;margin-bottom:16px}pre{white-space:pre-wrap;font-family:inherit}.report-head{display:flex;align-items:center;gap:14px;margin-bottom:6px}.report-head .brand-name{font-size:20px;font-weight:bold;letter-spacing:.5px}.report-head .brand-sub{font-size:12px;color:#757575}.id-table td{border:none;padding:3px 10px 3px 0;font-size:13px}.id-table td:first-child{color:#757575;white-space:nowrap}.foot{margin-top:36px;border-top:1px solid #ccc;padding-top:8px;font-size:11px;color:#757575}</style></head><body>
 <div class="report-head">${/^data:image\/(png|jpeg);base64,/.test(settings.latexLogo) ? `<img src="${settings.latexLogo}" alt="" style="width:44px;height:44px;object-fit:contain">` : LOGO_SVG}<div><div class="brand-name">${esc(org)}</div><div class="brand-sub">Informe de prueba de penetración${settings.userName ? ` · Emitido por ${esc(settings.userName)}${settings.role ? ` (${esc(settings.role)})` : ""}` : ""}${settings.email ? ` · ${esc(settings.email)}` : ""}</div></div></div>
 <h1>Informe de prueba de penetración</h1>
@@ -278,7 +279,7 @@ function buildReportHtml(project: Project, list: Finding[], settings: SettingsSt
 <h2>Resumen ejecutivo</h2><p>Se identificaron ${list.length} hallazgos durante la evaluación.</p>
 <table><tr><th>Severidad</th><th>Cantidad</th></tr>${counts.map(([s, n]) => `<tr><td>${esc(s)}</td><td>${n}</td></tr>`).join("")}</table>
 <h2>Detalle de hallazgos</h2>${list.map((f, i) => `<div class="f"><h3>${i + 1}. ${esc(f.title)}</h3><p><b>Severidad:</b> ${esc(f.severity)} · <b>Estado:</b> ${esc(f.status)}</p><pre>${esc(f.description || "Sin descripción")}</pre></div>`).join("")}
-<div class="foot">${esc(org)} · Informe generado con Vector · ${date} · Documento confidencial</div>
+<div class="foot">${esc(org)} · Informe generado con ${BRAND.name} · ${date} · Documento confidencial</div>
 </body></html>`;
 }
 
@@ -287,7 +288,7 @@ function buildReportLatex(project: Project, list: Finding[], settings: SettingsS
   const multi = (s: string) => t(s).split(/\n{2,}/).map(p => p.replace(/\n/g, "\\\\\n")).join("\n\n");
   const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
   const date = new Date().toLocaleDateString("es-AR");
-  const org = t(settings.organization || "Vector");
+  const org = t(settings.organization || BRAND.name);
   const issuer = settings.userName ? `Emitido por ${t(settings.userName)}${settings.role ? ` (${t(settings.role)})` : ""}${settings.email ? ` \\textperiodcentered{} ${t(settings.email)}` : ""}` : "";
   const color = (value: string, fallback: string) => /^#[0-9a-f]{6}$/i.test(value) ? value.slice(1).toUpperCase() : fallback;
   const primary = color(settings.latexPrimaryColor, "D9641E");
@@ -395,7 +396,7 @@ function buildLatexPreviewHtml(project: Project, list: Finding[], settings: Sett
   const esc = (s: string) => (s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
   const hex = (v: string, f: string) => /^#[0-9a-f]{6}$/i.test(v) ? v : f;
   const p = hex(settings.latexPrimaryColor, "#D9641E"), tx = hex(settings.latexTextColor, "#141414"), sc = hex(settings.latexSecondaryColor, "#757575");
-  const org = esc(settings.organization || "Vector");
+  const org = esc(settings.organization || BRAND.name);
   const date = new Date().toLocaleDateString("es-AR");
   const contacts = [settings.teamPhone, settings.teamWebsite, settings.teamAddress].filter(Boolean).map(esc).join(" · ");
   const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
@@ -465,6 +466,7 @@ function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onCl
       </div>
     </form>
     <Section title="Registro de auditoría" className="settings-section" action={audit.length ? <Button type="button" variant="outline" size="sm" onClick={onClearAudit}><Trash2 />Borrar todo</Button> : undefined}>{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span><span /></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "warning" : "info"}>{e.action}</Status><span>{e.detail}</span><span><button className="icon-danger" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDeleteAudit(e.id)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las exportaciones y eliminaciones." />}</Section>
+    <Section title="Acerca de" className="settings-section"><div className="setting-row"><span><b>{BRAND.name} {BRAND.version}</b><small>{BRAND.tagline} · Licencia {BRAND.license}</small></span></div><p className="field-help">Repositorio: <a href={BRAND.repository} target="_blank" rel="noreferrer">{BRAND.repository}</a></p><p className="field-help">Tus datos se guardan únicamente en este equipo. Esta aplicación no se conecta a internet ni envía información a terceros.</p></Section>
   </>;
 }
 
