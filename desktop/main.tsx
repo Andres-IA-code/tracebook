@@ -2,7 +2,6 @@ import { createRoot } from "react-dom/client";
 
 import { VectorApp } from "../src/components/vector-app";
 import { BRAND } from "../src/brand";
-import "../src/fonts";
 import "../src/styles.css";
 
 document.title = `${BRAND.name} — ${BRAND.tagline}`;

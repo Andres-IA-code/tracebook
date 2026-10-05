@@ -143,7 +143,7 @@ export function VectorApp() {
       const merged = normalizeData({ projects: mergeById(cur.projects, payload.data.projects), findings: mergeById(cur.findings, payload.data.findings), clients: mergeById(cur.clients, payload.data.clients), templates: mergeById(cur.templates, payload.data.templates), authorizations: mergeById(cur.authorizations, payload.data.authorizations) });
       const added = { projects: merged.projects.length - cur.projects.length, findings: merged.findings.length - cur.findings.length, authorizations: merged.authorizations.length - cur.authorizations.length, clients: merged.clients.length - cur.clients.length, templates: merged.templates.length - cur.templates.length };
       updateData(merged);
-      log("Importación", `Combinación desde ${name}: se agregaron ${countOf(added as unknown as DataState).replace(/(\d+) /g, "$1 ")}`.replace(/undefined/g, "0"));
+      log("Importación", `Combinación desde ${name}: se agregaron ${added.projects} proyectos, ${added.findings} hallazgos, ${added.authorizations} autorizaciones, ${added.clients} clientes, ${added.templates} plantillas`);
       confirm("Datos combinados");
     }
   };
