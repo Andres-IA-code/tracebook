@@ -1,7 +1,7 @@
 import { BRAND } from "@/brand";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
-  AlertTriangle, BookOpen, Bug, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
+  AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
   LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
@@ -46,6 +46,20 @@ function normalizeData(parsed: Partial<DataState>): DataState {
   });
   return next;
 }
+type ImportPayload = { data: DataState; settings: Partial<SettingsState> | null };
+function parseBackup(text: string): ImportPayload {
+  let raw: unknown;
+  try { raw = JSON.parse(text); } catch { throw new Error("El archivo no es un JSON válido."); }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("El archivo no tiene el formato de un respaldo de Vector.");
+  const obj = raw as Record<string, unknown>;
+  const keys = ["projects", "findings", "clients", "templates", "authorizations"];
+  if (!keys.some(k => k in obj)) throw new Error("El archivo no contiene proyectos, hallazgos, clientes, plantillas ni autorizaciones.");
+  for (const k of keys) if (k in obj && !Array.isArray(obj[k])) throw new Error(`El campo "${k}" no tiene un formato válido.`);
+  for (const k of keys) for (const item of (obj[k] as unknown[] | undefined) ?? []) if (!item || typeof item !== "object" || typeof (item as { id?: unknown }).id !== "string") throw new Error(`Hay registros sin identificador en "${k}".`);
+  const settings = obj["settings"] && typeof obj["settings"] === "object" && !Array.isArray(obj["settings"]) ? obj["settings"] as Partial<SettingsState> : null;
+  return { data: normalizeData(obj as Partial<DataState>), settings };
+}
+function mergeById<T extends { id: string }>(current: T[], incoming: T[]) { const ids = new Set(current.map(x => x.id)); return [...current, ...incoming.filter(x => !ids.has(x.id))]; }
 function exportBackup(data: DataState, settings: SettingsState) {
   const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: BRAND.name, version: BRAND.version }, null, 2);
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
@@ -103,6 +117,36 @@ export function VectorApp() {
     setPendingAuditDelete(null);
   };
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const importInput = useRef<HTMLInputElement>(null);
+  const [pendingImport, setPendingImport] = useState<{ payload: ImportPayload; name: string; confirmReplace: boolean } | null>(null);
+  const [importError, setImportError] = useState("");
+  const countOf = (d: DataState) => `${d.projects.length} proyectos, ${d.findings.length} hallazgos, ${d.authorizations.length} autorizaciones, ${d.clients.length} clientes, ${d.templates.length} plantillas`;
+  const startImport = () => { if (importInput.current) { importInput.current.value = ""; importInput.current.click(); } };
+  const onImportFile = async (file?: File) => {
+    if (!file) return;
+    try {
+      const payload = parseBackup(await file.text());
+      const hasData = [data.projects, data.findings, data.clients, data.templates, data.authorizations ?? []].some(a => a.length > 0);
+      if (hasData) setPendingImport({ payload, name: file.name, confirmReplace: false });
+      else applyImport(payload, "replace", file.name);
+    } catch (error) { setImportError(error instanceof Error ? error.message : "No se pudo leer el archivo."); }
+  };
+  const applyImport = (payload: ImportPayload, mode: "merge" | "replace", name: string) => {
+    setPendingImport(null);
+    if (mode === "replace") {
+      updateData(payload.data);
+      if (payload.settings) { const next = { ...DEFAULT_SETTINGS, ...payload.settings }; setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); }
+      log("Importación", `Reemplazo total desde ${name}: ${countOf(payload.data)}`);
+      confirm("Datos importados");
+    } else {
+      const cur = { ...data, authorizations: data.authorizations ?? [] };
+      const merged = normalizeData({ projects: mergeById(cur.projects, payload.data.projects), findings: mergeById(cur.findings, payload.data.findings), clients: mergeById(cur.clients, payload.data.clients), templates: mergeById(cur.templates, payload.data.templates), authorizations: mergeById(cur.authorizations, payload.data.authorizations) });
+      const added = { projects: merged.projects.length - cur.projects.length, findings: merged.findings.length - cur.findings.length, authorizations: merged.authorizations.length - cur.authorizations.length, clients: merged.clients.length - cur.clients.length, templates: merged.templates.length - cur.templates.length };
+      updateData(merged);
+      log("Importación", `Combinación desde ${name}: se agregaron ${added.projects} proyectos, ${added.findings} hallazgos, ${added.authorizations} autorizaciones, ${added.clients} clientes, ${added.templates} plantillas`);
+      confirm("Datos combinados");
+    }
+  };
 
   useEffect(() => {
     window.localStorage.removeItem("vertice-theme");
@@ -181,14 +225,14 @@ export function VectorApp() {
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />{BRAND.name}</div></div>
       <main className="page">
-        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} exportData={doExport} />}
+        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} exportData={doExport} importData={startImport} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
-        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
+        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} importData={startImport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
@@ -201,6 +245,25 @@ export function VectorApp() {
         <p>Esta acción no se puede deshacer y no queda registrada en el historial.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingAuditDelete(null)}>Cancelar</Button><Button type="submit"><Trash2 />{pendingAuditDelete === "all" ? "Borrar todo" : "Eliminar"}</Button></div>
       </form></section></div>; })() : null}
+    <input ref={importInput} type="file" accept="application/json,.json" hidden aria-label="Archivo de respaldo" onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; void onImportFile(file); }} />
+    {importError ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setImportError(""); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-error-title">
+      <div className="modal-head"><div><small>Importar datos</small><h2 id="import-error-title">Archivo no válido</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setImportError("")}><X /></Button></div>
+      <form onSubmit={event => { event.preventDefault(); setImportError(""); }}><p><AlertTriangle style={{display:"inline",width:14,height:14}} /> {importError}</p>
+      <p>Usa un archivo generado con “Exportar datos”.</p>
+      <div className="modal-actions"><Button type="submit">Entendido</Button></div></form>
+    </section></div> : null}
+    {pendingImport ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingImport(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
+      <div className="modal-head"><div><small>Importar datos</small><h2 id="import-title">{pendingImport.confirmReplace ? "¿Reemplazar todo?" : "Ya tienes datos cargados"}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingImport(null)}><X /></Button></div>
+      <form onSubmit={event => event.preventDefault()}>{pendingImport.confirmReplace ? <>
+        <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> Se borrarán <b>todos</b> los datos actuales ({countOf({ ...data, authorizations: data.authorizations ?? [] })}) y la configuración, y se reemplazarán por los del archivo.</p>
+        <p>Esta acción no se puede deshacer. Exporta un respaldo antes si lo necesitas.</p>
+        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingImport(null)}>Cancelar</Button><Button type="button" onClick={() => applyImport(pendingImport.payload, "replace", pendingImport.name)}>Sí, reemplazar todo</Button></div>
+      </> : <>
+        <p>El archivo <b>{pendingImport.name}</b> contiene {countOf(pendingImport.payload.data)}.</p>
+        <p><b>Combinar</b> agrega solo los registros nuevos. <b>Reemplazar todo</b> borra los datos actuales y restaura también la configuración.</p>
+        <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingImport(null)}>Cancelar</Button><Button type="button" variant="outline" onClick={() => setPendingImport({ ...pendingImport, confirmReplace: true })}>Reemplazar todo</Button><Button type="button" onClick={() => applyImport(pendingImport.payload, "merge", pendingImport.name)}>Combinar</Button></div>
+      </>}</form>
+    </section></div> : null}
     {pendingReset ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingReset(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="reset-title">
       <div className="modal-head"><div><small>Configuración</small><h2 id="reset-title">Restablecer configuración</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingReset(false)}><X /></Button></div>
       <form onSubmit={event => { event.preventDefault(); applyResetSettings(); }}>
@@ -232,10 +295,10 @@ declare global {
 // "Salir" only makes sense in the installed desktop app; browsers block closing tabs.
 const isDesktopApp = typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent);
 
-function Dashboard({ data, counts, go, create, exportData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; exportData: () => void }) {
+function Dashboard({ data, counts, go, create, exportData, importData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; exportData: () => void; importData: () => void }) {
   const date = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
   const metrics = [["Proyectos activos",counts[0],FolderOpen],["Hallazgos abiertos",counts[1],Bug],["Críticos",counts[2],AlertTriangle],["Informes por entregar",counts[3],FileText]] as const;
-  return <><Header title="Panel" sub={date.charAt(0).toUpperCase()+date.slice(1)}><Button variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
+  return <><Header title="Panel" sub={date.charAt(0).toUpperCase()+date.slice(1)}><Button variant="outline" onClick={importData}><Download />Importar datos</Button><Button variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
     <div className="metric-grid">{metrics.map(([label,value,Icon]) => <div className="metric" key={label}><span><Icon />{label}</span><strong>{value}</strong></div>)}</div>
     <Section title="Proyectos en curso" action={data.projects.length ? <button className="text-link" onClick={() => go("proyectos")}>Ver todos</button> : null}>{data.projects.length ? <div className="data-table dashboard-table"><div className="table-head"><span>Proyecto</span><span>Tipo</span><span>Estado</span><span>Cliente</span><span /></div>{data.projects.slice(0,5).map(project => <button className="table-row" key={project.id} onClick={() => go("proyectos")}><span><b>{project.name}</b><small>{project.start} — {project.end}</small></span><span>{project.type}</span><Status tone="info">{project.status}</Status><span>{project.client}</span><span>→</span></button>)}</div> : <EmptyState icon={FolderOpen} title="Todavía no hay proyectos" text="Crea el primero o importa un archivo con tus datos." action={<Button onClick={create}><Plus />Crear proyecto</Button>} />}</Section>
   </>;
@@ -432,7 +495,7 @@ function Clients({ clients, create, onDelete }: { clients: Client[]; create: () 
   return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span><span><button className="icon-danger" aria-label={`Eliminar ${client.name}`} title="Eliminar cliente" onClick={() => del(client)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section></>;
 }
 
-function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
+function SettingsPage({ settings, onSave, exportData, importData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; importData: () => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
   const [draft, setDraft] = useState(settings);
   const logoRef = useRef<HTMLInputElement>(null);
   useEffect(() => setDraft(settings), [settings]);
@@ -445,7 +508,7 @@ function SettingsPage({ settings, onSave, exportData, audit, onDeleteAudit, onCl
     reader.onload = () => { if (typeof reader.result === "string") set("latexLogo", reader.result); };
     reader.readAsDataURL(file);
   };
-  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
+  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={importData}><Download />Importar datos</Button><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
     <form className="settings-layout" onSubmit={submit}>
       <div className="stack">
         <Section title="Consultora" className="settings-section"><Field label="Nombre de la consultora" name="organization" value={draft.organization} required onChange={value => set("organization", value)} /><p className="field-help">Este nombre se muestra en la navegación y en los informes.</p></Section>
