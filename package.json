@@ -1,5 +1,5 @@
 {
-  "name": "vector-pentest",
+  "name": "lapapa",
   "private": true,
   "main": "electron/main.cjs",
   "sideEffects": false,
@@ -101,6 +101,6 @@
   },
   "version": "0.1.0",
   "license": "AGPL-3.0-or-later",
-  "description": "Gestión local de pentest",
+  "description": "Gestión e informes de pentest, 100 % local",
   "author": "La Papa"
 }

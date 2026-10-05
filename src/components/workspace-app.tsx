@@ -50,7 +50,7 @@ type ImportPayload = { data: DataState; settings: Partial<SettingsState> | null 
 function parseBackup(text: string): ImportPayload {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch { throw new Error("El archivo no es un JSON válido."); }
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("El archivo no tiene el formato de un respaldo de Vector.");
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("El archivo no tiene el formato de un respaldo de La Papa.");
   const obj = raw as Record<string, unknown>;
   const keys = ["projects", "findings", "clients", "templates", "authorizations"];
   if (!keys.some(k => k in obj)) throw new Error("El archivo no contiene proyectos, hallazgos, clientes, plantillas ni autorizaciones.");
@@ -63,7 +63,7 @@ function mergeById<T extends { id: string }>(current: T[], incoming: T[]) { cons
 function exportBackup(data: DataState, settings: SettingsState) {
   const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: BRAND.name, version: BRAND.version }, null, 2);
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
-  const a = document.createElement("a"); a.href = url; a.download = `vector-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  const a = document.createElement("a"); a.href = url; a.download = `lapapa-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
@@ -92,7 +92,7 @@ function EmptyState({ icon: Icon, title, text, action }: { icon: typeof FolderOp
   return <div className="empty-state"><span><Icon /></span><h3>{title}</h3><p>{text}</p>{action}</div>;
 }
 
-export function VectorApp() {
+export function WorkspaceApp() {
   const [view, setView] = useState<View>("panel");
   const [mobileNav, setMobileNav] = useState(false);
   const [notice, setNotice] = useState("");
@@ -220,7 +220,7 @@ export function VectorApp() {
       <div className="brand"><span className="brand-mark" />{BRAND.name}<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
       <button className="org-switcher" onClick={() => go("configuracion")}><span className="org-avatar">{initials(settings.organization || BRAND.name)}</span><span><b>{settings.organization || "Mi consultora"}</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
       <nav aria-label="Navegación principal">{navItems.map(([key,label,Icon]) => <button key={key} className={cn("nav-item", view === key && "active")} onClick={() => go(key)}><Icon /><span>{label}</span></button>)}</nav>
-      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.vectorDesktop?.quit()}><LogOut /><span>Salir</span></button> : null}<div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
+      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.desktopBridge?.quit()}><LogOut /><span>Salir</span></button> : null}<div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
     </aside>
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />{BRAND.name}</div></div>
@@ -288,7 +288,7 @@ function initials(value: string) {
 
 declare global {
   interface Window {
-    vectorDesktop?: { quit: () => void };
+    desktopBridge?: { quit: () => void };
   }
 }
 
@@ -364,11 +364,11 @@ function buildReportLatex(project: Project, list: Finding[], settings: SettingsS
 local b="${logoMatch[2]}"
 local a="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 local d=b:gsub("[^"..a.."=]",""):gsub(".",function(x) if x=="=" then return "" end local r="" local f=a:find(x,1,true)-1 for i=6,1,-1 do r=r..(math.fmod(f,2^i)-math.fmod(f,2^(i-1))>0 and "1" or "0") end return r end):gsub("[01][01][01][01][01][01][01][01]",function(x) local c=0 for i=1,8 do c=c+(x:sub(i,i)=="1" and 2^(8-i) or 0) end return string.char(c) end)
-local f=assert(io.open("vector-team-logo.${logoExtension}","wb")) f:write(d) f:close()
+local f=assert(io.open("team-logo.${logoExtension}","wb")) f:write(d) f:close()
 }
 ` : "";
   const logo = logoMatch
-    ? `\\includegraphics[width=1.1cm,height=1.1cm,keepaspectratio]{vector-team-logo.${logoExtension}}`
+    ? `\\includegraphics[width=1.1cm,height=1.1cm,keepaspectratio]{team-logo.${logoExtension}}`
     : `\\begin{tikzpicture}[baseline=-4pt]
   \\fill[vdark] (0,0) rectangle (1.1,1.1);
   \\draw[vorange,line width=1.4pt,line join=round] (0.55,0.88) -- (0.88,0.25) -- (0.22,0.25) -- cycle;

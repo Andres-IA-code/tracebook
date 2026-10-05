@@ -1,5 +1,5 @@
 appId: pentest-reports-desktop
-productName: Vector
+productName: "La Papa"
 directories:
   output: release
   buildResources: public/icons
@@ -30,4 +30,4 @@ linux:
   category: Development
   maintainer: La Papa
   target: [AppImage, deb]
-artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+artifactName: "LaPapa-${version}-${os}-${arch}.${ext}"
