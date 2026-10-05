@@ -9,12 +9,13 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:desktop": "vite build --config vite.desktop.config.ts",
-    "package:linux": "bun run build:desktop && electron-packager . Vector --platform=linux --arch=x64 --out=/tmp/vector-electron-release --overwrite --asar --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/.output",
-    "package:windows": "bun run build:desktop && electron-packager . Vector --platform=win32 --arch=x64 --out=/tmp/vector-electron-release --overwrite --asar --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/.output",
-    "package:mac": "bun run build:desktop && electron-packager . Vector --platform=darwin --arch=x64 --out=/tmp/vector-electron-release --overwrite --asar --ignore=node_modules --ignore=^/src --ignore=^/desktop --ignore=^/.output",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "dist:win": "bun run build:desktop && electron-builder --win",
+    "dist:mac": "bun run build:desktop && electron-builder --mac",
+    "dist:linux": "bun run build:desktop && electron-builder --linux",
+    "dist": "bun run build:desktop && electron-builder --win --mac --linux"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -97,5 +98,9 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5"
-  }
+  },
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Gesti\u00f3n local de pentest",
+  "author": "Vector contributors"
 }
