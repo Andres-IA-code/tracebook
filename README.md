@@ -1,29 +1,56 @@
-# Welcome to your Lovable project
+# Vector — Gestión de pentest
 
-This project was built with [Lovable](https://lovable.dev).
+Aplicación de escritorio de código abierto para documentar pentest autorizados: proyectos, autorizaciones firmadas, hallazgos, biblioteca de plantillas, informes y auditoría.
 
-## Build with Lovable
+![Panel](docs/screenshots/panel.png)
+![Hallazgos](docs/screenshots/hallazgos.png)
+![Informe LaTeX](docs/screenshots/informe.png)
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+## Funciones
+- Proyectos y clientes con borrado en cascada.
+- Autorizaciones con alcance, exclusiones, ventana de pruebas, envío al cliente y PDF.
+- Hallazgos por severidad y biblioteca de plantillas reutilizables.
+- Informes en LaTeX (personalizable con logotipo, colores y contacto), PDF, Word, HTML y JSON.
+- Registro de auditoría de importaciones, exportaciones y borrados.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+## Privacidad
+- Datos 100 % locales en tu equipo.
+- Sin telemetría, sin cuentas, sin conexiones a internet (CSP `connect-src 'none'`).
 
-## Development
+## Instalación
+Descarga el instalador desde *Releases*.
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+- **Windows**: `Vector-x.y.z-win-x64.exe` (instalador) o la versión portable. Al no estar firmado, SmartScreen mostrará "Windows protegió su PC": pulsa **Más información → Ejecutar de todas formas**.
+- **macOS**: `.dmg` para Intel (x64) o Apple Silicon (arm64). Gatekeeper lo bloqueará la primera vez: clic derecho sobre la app → **Abrir → Abrir**, o `xattr -dr com.apple.quarantine /Applications/Vector.app`.
+- **Linux**: `.AppImage` (`chmod +x Vector-*.AppImage && ./Vector-*.AppImage`) o `.deb` (`sudo apt install ./Vector-*.deb`).
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+### Verificar la huella SHA-256
+Compara con el valor publicado en la release:
+- Windows: `Get-FileHash .\Vector-*.exe -Algorithm SHA256`
+- macOS: `shasum -a 256 Vector-*.dmg`
+- Linux: `sha256sum Vector-*.AppImage`
+
+## Compilar desde el código fuente
+Requiere Bun (o Node 20+).
+```bash
+bun install
+bun run dist:linux   # AppImage + deb
+bun run dist:win     # NSIS + portable
+bun run dist:mac     # dmg x64 + arm64 (en macOS)
+bun run dist         # todas las plataformas posibles
 ```
+Los instaladores quedan en `release/`. Para cambiar el nombre visible edita `src/brand.ts` y `productName` en `electron-builder.yml`.
 
-## Built with
+## Copias de seguridad
+En **Configuración → Exportar datos** se genera un archivo JSON con todo tu espacio de trabajo. Guárdalo en un lugar seguro; puedes restaurarlo con la opción de importación (combinar o reemplazar).
 
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+## Aviso legal
+Esta herramienta sirve para documentar pruebas de seguridad **autorizadas** por escrito. Su uso contra sistemas sin permiso es responsabilidad exclusiva del usuario.
+
+## Licencia
+MIT — ver [LICENSE](LICENSE).
+
+---
+
+## English summary
+Vector is an open-source, fully offline desktop app (Electron) to manage authorized penetration tests: projects, signed authorizations, findings, template library, reports (LaTeX/PDF/Word/HTML/JSON) and an audit log. No accounts, no telemetry, no network access — data stays on your machine. Installers are unsigned: on Windows use *More info → Run anyway*; on macOS right-click → *Open*. Build with `bun install && bun run dist:<win|mac|linux>`. Licensed under MIT. Use only for authorized testing.
