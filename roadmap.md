@@ -14,5 +14,5 @@
 - [x] Optimize desktop startup and regenerate the three download packages
 - [x] Remove light mode and keep the interface permanently dark
 - [x] Add customizable LaTeX report branding and team contact details
-- [x] Add public landing page and email/password login gating /app
-- [x] Add the right-side cube scrollytelling scene to the public landing
+- [x] Convert to desktop-only open-source app (no landing, accounts or network)
+- [x] electron-builder installers, Electron hardening, About section, OSS docs
