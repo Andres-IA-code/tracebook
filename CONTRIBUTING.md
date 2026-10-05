@@ -21,4 +21,4 @@ Los instaladores quedan en `release/`.
 Al enviar un aporte (código, documentación u otro material) mediante un pull request o cualquier otro medio, confirmas que:
 1. Eres el autor del aporte o tienes derecho a enviarlo.
 2. Lo aportas bajo la licencia del proyecto, GNU AGPL v3 (AGPL-3.0-or-later).
-3. Concedes al autor del proyecto (La Papa) el derecho permanente, mundial y no exclusivo de distribuir tu aporte también bajo otras licencias, incluidas licencias comerciales.
+3. Concedes a Andrés Consiglio, autor del proyecto, el derecho permanente, mundial y no exclusivo de distribuir tu aporte también bajo otras licencias, incluidas licencias comerciales.

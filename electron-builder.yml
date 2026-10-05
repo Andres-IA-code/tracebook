@@ -28,6 +28,6 @@ mac:
 linux:
   icon: public/icons/icon-512.png
   category: Development
-  maintainer: La Papa
+  maintainer: "Andrés Consiglio (La Papa)"
   target: [AppImage, deb]
 artifactName: "LaPapa-${version}-${os}-${arch}.${ext}"
