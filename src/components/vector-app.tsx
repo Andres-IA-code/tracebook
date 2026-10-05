@@ -245,7 +245,7 @@ export function VectorApp() {
         <p>Esta acción no se puede deshacer y no queda registrada en el historial.</p>
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingAuditDelete(null)}>Cancelar</Button><Button type="submit"><Trash2 />{pendingAuditDelete === "all" ? "Borrar todo" : "Eliminar"}</Button></div>
       </form></section></div>; })() : null}
-    <input ref={importInput} type="file" accept="application/json,.json" hidden aria-label="Archivo de respaldo" onChange={event => void onImportFile(event.target.files?.[0])} />
+    <input ref={importInput} type="file" accept="application/json,.json" hidden aria-label="Archivo de respaldo" onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; void onImportFile(file); }} />
     {importError ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setImportError(""); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-error-title">
       <div className="modal-head"><div><small>Importar datos</small><h2 id="import-error-title">Archivo no válido</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setImportError("")}><X /></Button></div>
       <p><AlertTriangle style={{display:"inline",width:14,height:14}} /> {importError}</p>
