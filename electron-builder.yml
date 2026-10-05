@@ -1,0 +1,33 @@
+appId: pentest-reports-desktop
+productName: Vector
+directories:
+  output: release
+  buildResources: public/icons
+files:
+  - electron/**
+  - dist-desktop/**
+  - public/icons/**
+  - package.json
+asar: true
+win:
+  icon: public/icons/icon-512.png
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  icon: public/icons/icon-512.png
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+linux:
+  icon: public/icons/icon-512.png
+  category: Development
+  maintainer: Vector contributors
+  target: [AppImage, deb]
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
