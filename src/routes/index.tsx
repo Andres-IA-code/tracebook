@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { VectorApp } from "@/components/vector-app";
+import { WorkspaceApp } from "@/components/workspace-app";
 import { BRAND } from "@/brand";
 
 export const Route = createFileRoute("/")({
@@ -14,5 +14,5 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => <VectorApp />,
+  component: () => <WorkspaceApp />,
 });

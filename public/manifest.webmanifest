@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Vector — Gestión de pentest",
-  "short_name": "Vector",
+  "name": "La Papa — Gestión e informes de pentest",
+  "short_name": "La Papa",
   "description": "Espacio de trabajo para gestionar proyectos, hallazgos, clientes e informes de pentesting.",
   "start_url": "/",
   "scope": "/",
