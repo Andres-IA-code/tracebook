@@ -56,7 +56,7 @@ function parseBackup(text: string): ImportPayload {
   if (!keys.some(k => k in obj)) throw new Error("El archivo no contiene proyectos, hallazgos, clientes, plantillas ni autorizaciones.");
   for (const k of keys) if (k in obj && !Array.isArray(obj[k])) throw new Error(`El campo "${k}" no tiene un formato válido.`);
   for (const k of keys) for (const item of (obj[k] as unknown[] | undefined) ?? []) if (!item || typeof item !== "object" || typeof (item as { id?: unknown }).id !== "string") throw new Error(`Hay registros sin identificador en "${k}".`);
-  const settings = obj.settings && typeof obj.settings === "object" && !Array.isArray(obj.settings) ? obj.settings as Partial<SettingsState> : null;
+  const settings = obj["settings"] && typeof obj["settings"] === "object" && !Array.isArray(obj["settings"]) ? obj["settings"] as Partial<SettingsState> : null;
   return { data: normalizeData(obj as Partial<DataState>), settings };
 }
 function mergeById<T extends { id: string }>(current: T[], incoming: T[]) { const ids = new Set(current.map(x => x.id)); return [...current, ...incoming.filter(x => !ids.has(x.id))]; }
