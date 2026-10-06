@@ -606,11 +606,11 @@ function SettingsPage({ settings, onSave, exportData, importData, audit, onDelet
   </>;
 }
 
-function CreateDialog({ kind, projects, templates = [], onClose, onSave }: { kind: Exclude<CreateKind,null>; projects: Project[]; templates?: Template[]; onClose: () => void; onSave: (kind: Exclude<CreateKind,null>, item: Project | Finding | Client | Template) => void }) {
-  const labels = { project: "Nuevo proyecto", finding: "Nuevo hallazgo", client: "Nuevo cliente", template: "Nueva plantilla" };
-  const [tplId, setTplId] = useState(""); const [fTitle, setFTitle] = useState(""); const [fSev, setFSev] = useState("Crítico"); const [fDesc, setFDesc] = useState("");
+function CreateDialog({ kind, projects, templates = [], editing, onClose, onSave }: { kind: Exclude<CreateKind,null>; projects: Project[]; templates?: Template[]; editing?: Finding; onClose: () => void; onSave: (kind: Exclude<CreateKind,null>, item: Project | Finding | Client | Template) => void }) {
+  const labels = { project: "Nuevo proyecto", finding: editing ? "Editar hallazgo" : "Nuevo hallazgo", client: "Nuevo cliente", template: "Nueva plantilla" };
+  const [tplId, setTplId] = useState(""); const [fTitle, setFTitle] = useState(editing?.title ?? ""); const [fSev, setFSev] = useState(editing?.severity ?? "Crítico"); const [fDesc, setFDesc] = useState(editing?.description ?? "");
   const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); const form = new FormData(event.currentTarget); const id = crypto.randomUUID();
+    event.preventDefault(); const form = new FormData(event.currentTarget); const id = editing?.id ?? crypto.randomUUID();
     if (kind === "project") onSave(kind,{id,name:String(form.get("name")),client:String(form.get("client")),type:String(form.get("type")),status:String(form.get("status")),start:String(form.get("start")),end:String(form.get("end"))});
     if (kind === "finding") onSave(kind,{id,title:String(form.get("title")),severity:String(form.get("severity")),status:String(form.get("status")),projectId:String(form.get("projectId")) || undefined,project:projects.find(p=>p.id===form.get("projectId"))?.name ?? "",description:String(form.get("description"))});
     if (kind === "client") onSave(kind,{id,name:String(form.get("name")),industry:String(form.get("industry")),contact:String(form.get("contact")),email:String(form.get("email"))});
