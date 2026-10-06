@@ -20,12 +20,12 @@ Aplicación de escritorio de código abierto para documentar pentest autorizados
 ## Instalación
 Descarga el instalador desde *Releases*.
 
-- **Windows**: `LaPapa-x.y.z-win-x64.exe` (instalador) o la versión portable. Al no estar firmado, SmartScreen mostrará "Windows protegió su PC": pulsa **Más información → Ejecutar de todas formas**.
+- **Windows**: `LaPapa-x.y.z-win-x64-setup.exe` (instalador) o `LaPapa-x.y.z-win-x64-portable.exe` (versión portable). Al no estar firmado, SmartScreen mostrará "Windows protegió su PC": pulsa **Más información → Ejecutar de todas formas**.
 - **macOS**: `.dmg` para Intel (x64) o Apple Silicon (arm64). Gatekeeper lo bloqueará la primera vez: clic derecho sobre la app → **Abrir → Abrir**, o `xattr -dr com.apple.quarantine "/Applications/La Papa.app"`.
 - **Linux**: `.AppImage` (`chmod +x LaPapa-*.AppImage && ./LaPapa-*.AppImage`) o `.deb` (`sudo apt install ./LaPapa-*.deb`).
 
 ### Verificar la huella SHA-256
-Compara con el valor publicado en la release:
+Las huellas oficiales de cada archivo se publican en el archivo `SHA256SUMS.txt` de cada *Release*: descargalo de la misma página que el instalador y compara su contenido con el resultado del comando:
 - Windows: `Get-FileHash .\LaPapa-*.exe -Algorithm SHA256`
 - macOS: `shasum -a 256 LaPapa-*.dmg`
 - Linux: `sha256sum LaPapa-*.AppImage`
@@ -42,6 +42,13 @@ bun run dist:mac     # dmg x64 + arm64 (en macOS)
 bun run dist         # todas las plataformas posibles
 ```
 Los instaladores quedan en `release/`. Para cambiar el nombre visible edita `src/brand.ts` y `productName` en `electron-builder.yml`.
+
+## Publicar una versión
+Para mantenedores:
+
+1. Actualiza la versión en `package.json` y en `src/brand.ts`.
+2. En GitHub, ve a **Actions → "Publicar versión" → Run workflow** y ejecútalo.
+3. Cuando termine, revisa el borrador en **Releases** y publícalo.
 
 ## Copias de seguridad
 En **Configuración → Exportar datos** se genera un archivo JSON con todo tu espacio de trabajo. Guárdalo en un lugar seguro; puedes restaurarlo con la opción de importación (combinar o reemplazar).
