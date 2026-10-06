@@ -25,6 +25,7 @@ type SettingsState = {
 type CreateKind = "project" | "finding" | "client" | "template" | null;
 type PendingDelete = { group: string; heading: string; description: ReactNode; confirmLabel: string; run: () => void };
 
+const PROJECT_STATUSES = ["Preparación", "En prueba", "En revisión", "Entregado"];
 const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [] };
 const STORAGE_KEY = "vertice-workspace-data";
 const SETTINGS_KEY = "vertice-settings";
@@ -34,7 +35,7 @@ const DEFAULT_SETTINGS: SettingsState = {
   latexTextColor: "#141414", latexSecondaryColor: "#757575", teamPhone: "", teamWebsite: "", teamAddress: "",
 };
 
-type AuditEntry = { id: string; at: string; user: string; action: "Importación" | "Exportación" | "Eliminación"; detail: string };
+type AuditEntry = { id: string; at: string; user: string; action: "Importación" | "Exportación" | "Eliminación" | "Actualización"; detail: string };
 const AUDIT_KEY = "vertice-audit";
 function normalizeData(parsed: Partial<DataState>): DataState {
   const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] };
@@ -100,6 +101,7 @@ export function WorkspaceApp() {
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [createKind, setCreateKind] = useState<CreateKind>(null);
   const [editingFinding, setEditingFinding] = useState<Finding | null>(null);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [pendingReset, setPendingReset] = useState(false);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   useEffect(() => { try { const a = JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]"); if (Array.isArray(a)) setAudit(a); } catch { /* ignore */ } }, []);
@@ -217,6 +219,21 @@ export function WorkspaceApp() {
     setEditingFinding(null);
     confirm("Hallazgo actualizado");
   };
+  const saveProjectEdit = (item: Project) => {
+    const prev = data.projects.find(p => p.id === item.id);
+    updateData({ ...data, projects: data.projects.map(p => p.id === item.id ? item : p) });
+    setEditingProject(null);
+    if (prev && prev.status !== item.status) log("Actualización", `Proyecto "${item.name}": estado ${prev.status} → ${item.status}`);
+    else log("Actualización", `Proyecto "${item.name}" editado`);
+    confirm("Proyecto actualizado");
+  };
+  const setProjectStatus = (id: string, status: string) => {
+    const current = data.projects.find(p => p.id === id);
+    if (!current || current.status === status) return;
+    updateData({ ...data, projects: data.projects.map(p => p.id === id ? { ...p, status } : p) });
+    log("Actualización", `Proyecto "${current.name}": estado ${current.status} → ${status}`);
+    confirm(`Estado actualizado a ${status}`);
+  };
   const deleteFinding = (id: string) => {
     const f = data.findings.find(x => x.id === id); if (!f) return;
     setPendingDelete({
@@ -245,7 +262,7 @@ export function WorkspaceApp() {
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />{BRAND.name}</div></div>
       <main className="page">
         {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} exportData={doExport} importData={startImport} />}
-        {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
+        {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onEdit={setEditingProject} onStatus={setProjectStatus} onDelete={deleteProject} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} onEdit={setEditingFinding} onDelete={deleteFinding} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
@@ -256,6 +273,7 @@ export function WorkspaceApp() {
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
     {editingFinding ? <CreateDialog kind="finding" editing={editingFinding} projects={data.projects} onClose={() => setEditingFinding(null)} onSave={(_kind, item) => saveFindingEdit(item as Finding)} /> : null}
+    {editingProject ? <CreateDialog kind="project" editing={editingProject} projects={data.projects} onClose={() => setEditingProject(null)} onSave={(_kind, item) => saveProjectEdit(item as Project)} /> : null}
     {pendingAuditDelete ? (() => { const entry = pendingAuditDelete === "all" ? null : audit.find(e => e.id === pendingAuditDelete); return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingAuditDelete(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="audit-title">
       <div className="modal-head"><div><small>Registro de auditoría</small><h2 id="audit-title">{pendingAuditDelete === "all" ? "Borrar todo el registro" : "Eliminar registro"}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingAuditDelete(null)}><X /></Button></div>
       <form onSubmit={event => { event.preventDefault(); applyAuditDelete(); }}>
