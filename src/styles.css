@@ -552,8 +552,9 @@ input, textarea, select { text-transform: none; font-size: 13px; }
 .status-metric span { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted-foreground); }
 .status-metric strong { font-family: var(--font-display); font-weight: 300; text-transform: uppercase; line-height: .92; font-size: 48px; color: var(--foreground); -webkit-text-fill-color: var(--foreground); }
 .status-metric:hover strong { color: var(--primary); -webkit-text-fill-color: var(--primary); }
-.status-dot { width: 9px; height: 9px; flex: none; display: inline-block; background: var(--muted-foreground); }
-.status-dot-info { background: var(--primary); }
-.status-dot-warning { background: var(--warning-strong); }
-.status-dot-success { background: var(--success-strong); }
+.status-icon { width: 18px; height: 18px; flex: none; }
+.status-icon-neutral { color: var(--muted-foreground); }
+.status-icon-info { color: var(--primary); }
+.status-icon-warning { color: var(--warning-strong); }
+.status-icon-success { color: var(--success-strong); }
 @media (max-width: 900px) { .status-metric-grid { grid-template-columns: 1fr; gap: 10px; } .status-metric { padding: 14px; } .status-metric strong { font-size: 34px; } }
