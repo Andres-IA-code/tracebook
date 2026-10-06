@@ -155,12 +155,11 @@ export function WorkspaceApp() {
   useEffect(() => {
     window.localStorage.removeItem("vertice-theme");
     const savedData = window.localStorage.getItem(STORAGE_KEY);
-    console.log("DBG load savedData:", savedData ? savedData.slice(0,25) : "NONE");
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData) as Partial<DataState>;
         setData(normalizeData(parsed));
-      } catch (e) { console.log("DBG load throw:", String(e)); window.localStorage.removeItem(STORAGE_KEY); }
+      } catch { window.localStorage.removeItem(STORAGE_KEY); }
     }
     const savedSettings = window.localStorage.getItem(SETTINGS_KEY);
     if (savedSettings) {
