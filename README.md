@@ -43,6 +43,13 @@ bun run dist         # todas las plataformas posibles
 ```
 Los instaladores quedan en `release/`. Para cambiar el nombre visible edita `src/brand.ts` y `productName` en `electron-builder.yml`.
 
+## Publicar una versión
+Para mantenedores:
+
+1. Actualiza la versión en `package.json` y en `src/brand.ts`.
+2. En GitHub, ve a **Actions → "Publicar versión" → Run workflow** y ejecútalo.
+3. Cuando termine, revisa el borrador en **Releases** y publícalo.
+
 ## Copias de seguridad
 En **Configuración → Exportar datos** se genera un archivo JSON con todo tu espacio de trabajo. Guárdalo en un lugar seguro; puedes restaurarlo con la opción de importación (combinar o reemplazar).
 
