@@ -20,7 +20,7 @@ function createWindow() {
     height: 960,
     minWidth: 900,
     minHeight: 640,
-    backgroundColor: "#141414",
+    backgroundColor: "#ECE7DD",
     icon: path.join(__dirname, "..", "public", "icons", "icon-512.png"),
     webPreferences: {
       contextIsolation: true,

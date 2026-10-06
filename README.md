@@ -32,6 +32,8 @@ Compara con el valor publicado en la release:
 
 ## Compilar desde el código fuente
 Requiere Bun (o Node 20+).
+
+Si bun install falla con un error 403, ejecuta primero: `node scripts/fix-lockfile.mjs`
 ```bash
 bun install
 bun run dist:linux   # AppImage + deb

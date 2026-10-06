@@ -18,7 +18,6 @@ type Template = { id: string; title: string; cwe: string; category: string; seve
 type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; templates: Template[]; authorizations: Authorization[] };
 type SettingsState = {
   organization: string; userName: string; email: string; role: string; timezone: string;
-  emailAlerts: boolean; reportAlerts: boolean;
   latexLogo: string; latexPrimaryColor: string; latexTextColor: string; latexSecondaryColor: string;
   teamPhone: string; teamWebsite: string; teamAddress: string;
 };
@@ -29,11 +28,13 @@ const PROJECT_STATUSES = ["Preparación", "En prueba", "En revisión", "Entregad
 const PROJECT_STATUS_TONES: Record<string, string> = { "Preparación": "neutral", "En prueba": "info", "En revisión": "warning", "Entregado": "success" };
 const PROJECT_STATUS_ICONS: Record<string, typeof FolderOpen> = { "Preparación": FolderOpen, "En prueba": Play, "En revisión": Eye, "Entregado": Send };
 const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [] };
+// Storage keys intentionally keep the legacy "vertice-*" names for compatibility:
+// renaming them would make the app lose data people already saved.
 const STORAGE_KEY = "vertice-workspace-data";
 const SETTINGS_KEY = "vertice-settings";
 const DEFAULT_SETTINGS: SettingsState = {
   organization: "", userName: "", email: "", role: "Responsable", timezone: "America/Argentina/Buenos_Aires",
-  emailAlerts: true, reportAlerts: true, latexLogo: "", latexPrimaryColor: "#D9641E",
+  latexLogo: "", latexPrimaryColor: "#D9641E",
   latexTextColor: "#141414", latexSecondaryColor: "#757575", teamPhone: "", teamWebsite: "", teamAddress: "",
 };
 
@@ -140,7 +141,7 @@ export function WorkspaceApp() {
     setPendingImport(null);
     if (mode === "replace") {
       updateData(payload.data);
-      if (payload.settings) { const next = { ...DEFAULT_SETTINGS, ...payload.settings }; setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); }
+      if (payload.settings) { const { emailAlerts: _ea, reportAlerts: _ra, ...importedSettings } = payload.settings as SettingsState & { emailAlerts?: unknown; reportAlerts?: unknown }; void _ea; void _ra; const next = { ...DEFAULT_SETTINGS, ...importedSettings }; setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); }
       log("Importación", `Reemplazo total desde ${name}: ${countOf(payload.data)}`);
       confirm("Datos importados");
     } else {
@@ -648,7 +649,6 @@ function SettingsPage({ settings, onSave, exportData, importData, audit, onDelet
         </Section>
       </div>
       <div className="stack">
-        <Section title="Notificaciones" className="settings-section"><div className="setting-row"><span><b>Alertas por correo</b><small>Recibe avisos sobre autorizaciones y hallazgos.</small></span><label className="switch"><input type="checkbox" checked={draft.emailAlerts} onChange={event => set("emailAlerts", event.target.checked)} /><i /></label></div><div className="setting-row"><span><b>Informes listos</b><small>Recibe un aviso cuando un informe esté disponible.</small></span><label className="switch"><input type="checkbox" checked={draft.reportAlerts} onChange={event => set("reportAlerts", event.target.checked)} /><i /></label></div></Section>
         <div className="settings-actions">
           <Button type="submit" size="lg"><Check />Guardar configuración</Button>
           <Button type="button" variant="outline" onClick={onResetSettings}><RotateCcw />Restablecer configuración</Button>
@@ -656,7 +656,7 @@ function SettingsPage({ settings, onSave, exportData, importData, audit, onDelet
       </div>
     </form>
     <Section title="Registro de auditoría" className="settings-section" action={audit.length ? <Button type="button" variant="outline" size="sm" onClick={onClearAudit}><Trash2 />Borrar todo</Button> : undefined}>{audit.length ? <div className="data-table audit-table"><div className="table-head"><span>Fecha y hora</span><span>Usuario</span><span>Acción</span><span>Detalle</span><span /></div>{audit.map(e => <div className="table-row" key={e.id}><span>{new Date(e.at).toLocaleString("es-AR")}</span><span>{e.user}</span><Status tone={e.action === "Eliminación" ? "warning" : "info"}>{e.action}</Status><span>{e.detail}</span><span><button className="icon-danger" aria-label="Eliminar registro" title="Eliminar registro" onClick={() => onDeleteAudit(e.id)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={FileText} title="Sin acciones registradas" text="Aquí se registrarán las exportaciones y eliminaciones." />}</Section>
-    <Section title="Acerca de" className="settings-section"><div className="setting-row"><span><b>{BRAND.name} {BRAND.version}</b><small>{BRAND.tagline} · Licencia {BRAND.license}</small></span></div><p className="field-help">Este programa es software libre: puedes redistribuirlo y modificarlo según los términos de la licencia GNU AGPL v3. Se distribuye sin ninguna garantía.</p><p className="field-help">Código fuente: <a href={BRAND.repository} target="_blank" rel="noreferrer">{BRAND.repository}</a></p><p className="field-help">Tus datos se guardan únicamente en este equipo. Esta aplicación no se conecta a internet ni envía información a terceros.</p></Section>
+    <Section title="Acerca de" className="settings-section"><div className="setting-row"><span><b>{BRAND.name} {BRAND.version}</b><small>{BRAND.tagline} · Licencia {BRAND.license}</small></span></div><p className="field-help">Este programa es software libre: puedes redistribuirlo y modificarlo según los términos de la licencia GNU AGPL v3. Se distribuye sin ninguna garantía.</p><p className="field-help">Código fuente: <a href={BRAND.repository.replace(/\.git$/, "")} target="_blank" rel="noreferrer">{BRAND.repository.replace(/\.git$/, "")}</a></p><p className="field-help">Tus datos se guardan únicamente en este equipo. Esta aplicación no se conecta a internet ni envía información a terceros.</p></Section>
   </>;
 }
 

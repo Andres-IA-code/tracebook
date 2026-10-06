@@ -20,3 +20,5 @@
 - Link findings to projects by `projectId` (legacy name links are upgraded on load/import); project deletion cascades to linked findings and authorizations, so records never orphan.
 - Print reports/authorizations through a hidden in-page iframe (`src/lib/print-html.ts`), because Electron blocks new blank windows.
 - Keep LaTeX report branding in the persisted workspace settings and embed custom logos into the generated source so exports remain portable.
+- Keep every package URL in `bun.lock` on the public registry https://registry.npmjs.org/ (fix with `node scripts/fix-lockfile.mjs`), so anyone can clone and run `bun install`.
+- Never rename the localStorage keys `vertice-workspace-data`, `vertice-settings`, `vertice-audit`; they are kept on purpose for compatibility with data already saved.
