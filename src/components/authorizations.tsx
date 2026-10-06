@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { AlertTriangle, Ban, CalendarClock, Check, FileDown, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, FileDown, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -121,7 +121,7 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
   </>;
 }
 
-function AuthDetail({ a, onEdit, onDelete, onSend, onMail, onSign, onReject, onRevoke }: { a: Authorization; onEdit: () => void; onDelete: () => void; onSend: () => void; onMail: () => void; onSign: () => void; onReject: () => void; onRevoke: () => void }) {
+function AuthDetail({ a, onEdit, onDelete, onSend, onMail, onSign, onReject }: { a: Authorization; onEdit: () => void; onDelete: () => void; onSend: () => void; onMail: () => void; onSign: () => void; onReject: () => void }) {
   const s = effectiveStatus(a);
   const editable = a.status === "Borrador" || a.status === "Enviada";
   return <div className="detail-body auth-detail">
