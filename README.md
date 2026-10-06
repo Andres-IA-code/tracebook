@@ -20,7 +20,7 @@ Aplicación de escritorio de código abierto para documentar pentest autorizados
 ## Instalación
 Descarga el instalador desde *Releases*.
 
-- **Windows**: `LaPapa-x.y.z-win-x64.exe` (instalador) o la versión portable. Al no estar firmado, SmartScreen mostrará "Windows protegió su PC": pulsa **Más información → Ejecutar de todas formas**.
+- **Windows**: `LaPapa-x.y.z-win-x64-setup.exe` (instalador) o `LaPapa-x.y.z-win-x64-portable.exe` (versión portable). Al no estar firmado, SmartScreen mostrará "Windows protegió su PC": pulsa **Más información → Ejecutar de todas formas**.
 - **macOS**: `.dmg` para Intel (x64) o Apple Silicon (arm64). Gatekeeper lo bloqueará la primera vez: clic derecho sobre la app → **Abrir → Abrir**, o `xattr -dr com.apple.quarantine "/Applications/La Papa.app"`.
 - **Linux**: `.AppImage` (`chmod +x LaPapa-*.AppImage && ./LaPapa-*.AppImage`) o `.deb` (`sudo apt install ./LaPapa-*.deb`).
 
