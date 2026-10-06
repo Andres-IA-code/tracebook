@@ -1,0 +1,27 @@
+name: Corregir registro en bun.lock
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix-lockfile:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, 'chore: usar registro público de npm en bun.lock')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Corregir bun.lock si usa el registro privado
+        run: |
+          if ! grep -q "lovable-core-prod" bun.lock; then
+            echo "Nada que corregir."
+            exit 0
+          fi
+          node scripts/fix-lockfile.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add bun.lock
+          git commit -m "chore: usar registro público de npm en bun.lock"
+          git push
