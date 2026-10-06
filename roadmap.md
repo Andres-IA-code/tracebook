@@ -14,5 +14,6 @@
 - [x] Optimize desktop startup and regenerate the three download packages
 - [x] Remove light mode and keep the interface permanently dark
 - [x] Add customizable LaTeX report branding and team contact details
+- [x] Organize LaTeX reports with cover, index, summary, project data, and severity-grouped findings
 - [x] Convert to desktop-only open-source app (no landing, accounts or network)
 - [x] electron-builder installers, Electron hardening, About section, OSS docs
