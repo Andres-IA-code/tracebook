@@ -2,7 +2,7 @@ import { BRAND } from "@/brand";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Pencil, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
+  LayoutDashboard, LogOut, Menu, Pencil, Play, Plus, RotateCcw, Search, Send, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ type PendingDelete = { group: string; heading: string; description: ReactNode; c
 
 const PROJECT_STATUSES = ["Preparación", "En prueba", "En revisión", "Entregado"];
 const PROJECT_STATUS_TONES: Record<string, string> = { "Preparación": "neutral", "En prueba": "info", "En revisión": "warning", "Entregado": "success" };
+const PROJECT_STATUS_ICONS: Record<string, typeof FolderOpen> = { "Preparación": FolderOpen, "En prueba": Play, "En revisión": Eye, "Entregado": Send };
 const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [] };
 const STORAGE_KEY = "vertice-workspace-data";
 const SETTINGS_KEY = "vertice-settings";
@@ -340,7 +341,7 @@ function Dashboard({ data, counts, statusCounts, go, create, exportData, importD
   const metrics = [["Proyectos activos",counts[0],FolderOpen],["Hallazgos abiertos",counts[1],Bug],["Críticos",counts[2],AlertTriangle],["Informes entregados",counts[3],FileText]] as const;
   return <><Header title="Panel" sub={date.charAt(0).toUpperCase()+date.slice(1)}><Button variant="outline" onClick={importData}><Download />Importar datos</Button><Button variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
     <div className="metric-grid">{metrics.map(([label,value,Icon]) => <div className="metric" key={label}><span><Icon />{label}</span><strong>{value}</strong></div>)}</div>
-    <div className="status-metric-grid" aria-label="Proyectos por estado">{PROJECT_STATUSES.slice(1).map((status, index) => <button className="status-metric" key={status} onClick={() => go("proyectos")}><span><i className={cn("status-dot", `status-dot-${PROJECT_STATUS_TONES[status] ?? "neutral"}`)} />{status}</span><strong>{statusCounts[index + 1]}</strong></button>)}</div>
+    <div className="status-metric-grid" aria-label="Proyectos por estado">{PROJECT_STATUSES.slice(1).map((status, index) => { const Icon = PROJECT_STATUS_ICONS[status] ?? FolderOpen; return <button className="status-metric" key={status} onClick={() => go("proyectos")}><span><Icon className={cn("status-icon", `status-icon-${PROJECT_STATUS_TONES[status] ?? "neutral"}`)} />{status}</span><strong>{statusCounts[index + 1]}</strong></button>; })}</div>
     <Section title="Proyectos en curso" action={data.projects.length ? <button className="text-link" onClick={() => go("proyectos")}>Ver todos</button> : null}>{data.projects.length ? <div className="data-table dashboard-table"><div className="table-head"><span>Proyecto</span><span>Tipo</span><span>Estado</span><span>Cliente</span><span /></div>{data.projects.slice(0,5).map(project => <button className="table-row" key={project.id} onClick={() => go("proyectos")}><span><b>{project.name}</b><small>{project.start} — {project.end}</small></span><span>{project.type}</span><Status tone="info">{project.status}</Status><span>{project.client}</span><span>→</span></button>)}</div> : <EmptyState icon={FolderOpen} title="Todavía no hay proyectos" text="Crea el primero o importa un archivo con tus datos." action={<Button onClick={create}><Plus />Crear proyecto</Button>} />}</Section>
   </>;
 }
