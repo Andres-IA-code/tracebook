@@ -18,3 +18,4 @@
 - [x] Convert to desktop-only open-source app (no landing, accounts or network)
 - [x] electron-builder installers, Electron hardening, About section, OSS docs
 - [x] Edit projects and change their status directly from the projects table
+- [x] Rename panel metric to "Informes entregados" and count delivered projects
