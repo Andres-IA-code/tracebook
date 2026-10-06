@@ -2,7 +2,7 @@ import { BRAND } from "@/brand";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
+  LayoutDashboard, LogOut, Menu, Pencil, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -99,6 +99,7 @@ export function WorkspaceApp() {
   const [data, setData] = useState<DataState>(EMPTY_DATA);
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [createKind, setCreateKind] = useState<CreateKind>(null);
+  const [editingFinding, setEditingFinding] = useState<Finding | null>(null);
   const [pendingReset, setPendingReset] = useState(false);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   useEffect(() => { try { const a = JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]"); if (Array.isArray(a)) setAudit(a); } catch { /* ignore */ } }, []);
