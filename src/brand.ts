@@ -4,5 +4,5 @@ export const BRAND = {
   version: "0.1.0",
   tagline: "Gestión e informes de pentest",
   license: "AGPL-3.0",
-  repository: "https://github.com/USUARIO/REPOSITORIO",
+  repository: "https://github.com/Andres-IA-code/la-papa.git",
 } as const;
