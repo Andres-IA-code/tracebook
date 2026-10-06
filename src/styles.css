@@ -533,10 +533,6 @@ input, textarea, select { text-transform: none; font-size: 13px; }
 }
 
 /* ===== Estado de proyecto editable desde la tabla ===== */
-.status-select-wrap { position: relative; padding-right: 26px; }
-.status-select-wrap::after { content: ""; position: absolute; right: 10px; top: 50%; width: 5px; height: 5px; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; transform: translateY(-70%) rotate(45deg); pointer-events: none; }
-.status-select { appearance: none; -webkit-appearance: none; border: 0; background: transparent; color: inherit; font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; padding: 0 12px 0 0; cursor: pointer; }
-.status-select:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 4px; }
 .row-actions { display: flex; align-items: center; gap: 6px; }
 .icon-danger.icon-edit:hover { color: var(--primary); border-color: var(--primary); background: color-mix(in oklab, var(--primary) 12%, transparent); }
 
