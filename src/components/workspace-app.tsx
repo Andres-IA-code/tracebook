@@ -325,13 +325,15 @@ function Library({ templates, create, onDelete }: { templates: Template[]; creat
 }
 
 type ReportFormat = "latex" | "pdf" | "docx" | "html" | "json";
-const SEV_ORDER = ["Crítico", "Alto", "Medio", "Bajo"];
+const SEV_ORDER = ["Crítico", "Alto", "Medio", "Bajo", "Sin clasificar"];
+// Normaliza variantes (p. ej. "Crítica", "alta") para que ningún hallazgo quede fuera del informe.
+const sevOf = (f: { severity: string }) => { const v = (f.severity ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); if (v.startsWith("crit")) return "Crítico"; if (v.startsWith("alt")) return "Alto"; if (v.startsWith("med")) return "Medio"; if (v.startsWith("baj")) return "Bajo"; return "Sin clasificar"; };
 
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><rect width="44" height="44" rx="10" fill="#141414"/><path d="M22 9 35 33H9Z" fill="none" stroke="#ED7D27" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="#ED7D27"/></svg>`;
 
 function buildReportHtml(project: Project, list: Finding[], settings: SettingsState) {
   const esc = (s: string) => (s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
-  const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
+  const counts = SEV_ORDER.map(s => [s, list.filter(f => sevOf(f) === s).length] as const).filter(([, n]) => n);
   const date = new Date().toLocaleDateString("es-AR");
   const org = settings.organization || BRAND.name;
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe — ${esc(project.name)}</title><style>body{font-family:Georgia,serif;max-width:760px;margin:40px auto;color:#141414;line-height:1.5}h1{font-size:24px;border-bottom:3px solid #D9641E;padding-bottom:8px}h2{font-size:17px;margin-top:28px;color:#41423A}h3{font-size:15px;margin:18px 0 4px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:13px}th{background:#ECE2D2}.f{border-left:3px solid #D9641E;padding-left:12px;margin-bottom:16px}pre{white-space:pre-wrap;font-family:inherit}.report-head{display:flex;align-items:center;gap:14px;margin-bottom:6px}.report-head .brand-name{font-size:20px;font-weight:bold;letter-spacing:.5px}.report-head .brand-sub{font-size:12px;color:#757575}.id-table td{border:none;padding:3px 10px 3px 0;font-size:13px}.id-table td:first-child{color:#757575;white-space:nowrap}.foot{margin-top:36px;border-top:1px solid #ccc;padding-top:8px;font-size:11px;color:#757575}</style></head><body>
@@ -349,7 +351,7 @@ function buildReportHtml(project: Project, list: Finding[], settings: SettingsSt
 function buildReportLatex(project: Project, list: Finding[], settings: SettingsState) {
   const t = (s: string) => (s ?? "").replace(/[\\{}&%$#_^~]/g, c => ({ "\\": "\\textbackslash{}", "{": "\\{", "}": "\\}", "&": "\\&", "%": "\\%", "$": "\\$", "#": "\\#", "_": "\\_", "^": "\\textasciicircum{}", "~": "\\textasciitilde{}" }[c]!));
   const multi = (s: string) => t(s).split(/\n{2,}/).map(p => p.replace(/\n/g, "\\\\\n")).join("\n\n");
-  const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
+  const counts = SEV_ORDER.map(s => [s, list.filter(f => sevOf(f) === s).length] as const).filter(([, n]) => n);
   const date = new Date().toLocaleDateString("es-AR");
   const org = t(settings.organization || BRAND.name);
   const issuer = settings.userName ? `Emitido por ${t(settings.userName)}${settings.role ? ` (${t(settings.role)})` : ""}${settings.email ? ` \\textperiodcentered{} ${t(settings.email)}` : ""}` : "";
@@ -359,7 +361,7 @@ function buildReportLatex(project: Project, list: Finding[], settings: SettingsS
   const secondary = color(settings.latexSecondaryColor, "757575");
   const contacts = [settings.teamPhone, settings.teamWebsite, settings.teamAddress].filter(Boolean).map(t);
   const findingsBySeverity = SEV_ORDER
-    .map(severity => ({ severity, findings: list.filter(f => f.severity === severity) }))
+    .map(severity => ({ severity, findings: list.filter(f => sevOf(f) === severity) }))
     .filter(group => group.findings.length > 0);
   const logoMatch = settings.latexLogo.match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=]+)$/);
   const logoExtension = logoMatch?.[1] === "jpeg" ? "jpg" : "png";
@@ -490,7 +492,7 @@ ${multi(f.description || "Sin descripción")}
 
 function generateReport(project: Project, findings: Finding[], format: ReportFormat, settings: SettingsState) {
   const list = findings.filter(f => f.projectId === project.id)
-    .sort((a, b) => SEV_ORDER.indexOf(a.severity) - SEV_ORDER.indexOf(b.severity));
+    .sort((a, b) => SEV_ORDER.indexOf(sevOf(a)) - SEV_ORDER.indexOf(sevOf(b)));
   const html = buildReportHtml(project, list, settings);
   const base = `Informe-${project.name.replace(/[^\w\-]+/g, "_")}`;
   const download = (content: string, type: string, ext: string) => {
@@ -513,8 +515,8 @@ function buildLatexPreviewHtml(project: Project, list: Finding[], settings: Sett
   const org = esc(settings.organization || BRAND.name);
   const date = new Date().toLocaleDateString("es-AR");
   const contacts = [settings.teamPhone, settings.teamWebsite, settings.teamAddress].filter(Boolean).map(esc).join(" · ");
-  const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
-  const findingsBySeverity = SEV_ORDER.map(severity => ({ severity, findings: list.filter(f => f.severity === severity) })).filter(group => group.findings.length);
+  const counts = SEV_ORDER.map(s => [s, list.filter(f => sevOf(f) === s).length] as const).filter(([, n]) => n);
+  const findingsBySeverity = SEV_ORDER.map(severity => ({ severity, findings: list.filter(f => sevOf(f) === severity) })).filter(group => group.findings.length);
   const logo = /^data:image\/(png|jpeg);base64,/.test(settings.latexLogo)
     ? `<img src="${settings.latexLogo}" alt="" style="width:42px;height:42px;object-fit:contain">`
     : `<svg width="42" height="42" viewBox="0 0 44 44"><rect width="44" height="44" fill="${tx}"/><path d="M22 9 35 33H9Z" fill="none" stroke="${p}" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="${p}"/></svg>`;
