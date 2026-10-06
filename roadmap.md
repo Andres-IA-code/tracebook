@@ -19,3 +19,4 @@
 - [x] electron-builder installers, Electron hardening, About section, OSS docs
 - [x] Edit projects and change their status directly from the projects table
 - [x] Rename panel metric to "Informes entregados" and count delivered projects
+- [x] Add panel counters for projects in test, in review and delivered
