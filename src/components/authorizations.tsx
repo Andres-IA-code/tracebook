@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { AlertTriangle, Ban, CalendarClock, Check, FileDown, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, FileDown, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -105,7 +105,6 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
           }}
           onSign={() => setSigning(current)}
           onReject={() => { const reason = window.prompt("Motivo del rechazo"); if (reason !== null) patch(current.id, { status: "Rechazada", reason }, "Autorización rechazada"); }}
-          onRevoke={() => { const reason = window.prompt("Motivo de la revocación"); if (reason !== null) patch(current.id, { status: "Revocada", reason }, "Autorización revocada"); }}
         /> : <div className="empty-state"><span><ShieldCheck /></span><h3>Selecciona una autorización</h3><p>El documento y sus acciones se mostrarán aquí.</p></div>}</section>
       </div>
     </>}
@@ -122,7 +121,7 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
   </>;
 }
 
-function AuthDetail({ a, onEdit, onDelete, onSend, onMail, onSign, onReject, onRevoke }: { a: Authorization; onEdit: () => void; onDelete: () => void; onSend: () => void; onMail: () => void; onSign: () => void; onReject: () => void; onRevoke: () => void }) {
+function AuthDetail({ a, onEdit, onDelete, onSend, onMail, onSign, onReject }: { a: Authorization; onEdit: () => void; onDelete: () => void; onSend: () => void; onMail: () => void; onSign: () => void; onReject: () => void }) {
   const s = effectiveStatus(a);
   const editable = a.status === "Borrador" || a.status === "Enviada";
   return <div className="detail-body auth-detail">
@@ -147,7 +146,6 @@ function AuthDetail({ a, onEdit, onDelete, onSend, onMail, onSign, onReject, onR
       <Button variant="outline" onClick={onMail}><Mail />Enviar al cliente</Button>
       {editable ? <Button onClick={onSign} variant={a.status === "Enviada" ? "default" : "outline"}><FileSignature />Registrar firma</Button> : null}
       {a.status === "Enviada" ? <Button variant="outline" onClick={onReject}><X />Rechazada</Button> : null}
-      {a.status === "Firmada" ? <Button variant="outline" onClick={onRevoke}><Ban />Revocar</Button> : null}
       <Button variant="outline" onClick={() => downloadAuthPdf(a)}><FileDown />Descargar PDF</Button>
       <Button variant="outline" onClick={() => printAuth(a)}><Printer />Imprimir</Button>
       {editable ? <Button variant="ghost" onClick={onEdit}><Pencil />Editar</Button> : null}
