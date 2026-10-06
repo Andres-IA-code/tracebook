@@ -6,7 +6,7 @@ permissions:
   contents: write
 jobs:
   fix-lockfile:
-    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, 'chore: usar registro público de npm en bun.lock')
+    if: "github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, 'chore: usar registro público de npm en bun.lock')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
