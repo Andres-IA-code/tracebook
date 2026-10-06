@@ -251,7 +251,7 @@ export function WorkspaceApp() {
   const activeProjects = data.projects.filter(project => project.status !== "Entregado").length;
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
   const critical = data.findings.filter(finding => finding.severity === "Crítico" && finding.status !== "Cerrado").length;
-  const pendingReports = data.projects.filter(project => project.status === "En revisión").length;
+  const deliveredReports = data.projects.filter(project => project.status === "Entregado").length;
   return <div className="app-shell">
     <aside className={cn("sidebar", mobileNav && "sidebar-open")}>
       <div className="brand"><span className="brand-mark" />{BRAND.name}<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
@@ -262,7 +262,7 @@ export function WorkspaceApp() {
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><span className="brand-mark" />{BRAND.name}</div></div>
       <main className="page">
-        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} exportData={doExport} importData={startImport} />}
+        {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,deliveredReports]} go={go} create={() => setCreateKind("project")} exportData={doExport} importData={startImport} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onEdit={setEditingProject} onStatus={setProjectStatus} onDelete={deleteProject} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} onEdit={setEditingFinding} onDelete={deleteFinding} />}
@@ -336,7 +336,7 @@ const isDesktopApp = typeof navigator !== "undefined" && /Electron/i.test(naviga
 
 function Dashboard({ data, counts, go, create, exportData, importData }: { data: DataState; counts: number[]; go: (v: View) => void; create: () => void; exportData: () => void; importData: () => void }) {
   const date = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
-  const metrics = [["Proyectos activos",counts[0],FolderOpen],["Hallazgos abiertos",counts[1],Bug],["Críticos",counts[2],AlertTriangle],["Informes por entregar",counts[3],FileText]] as const;
+  const metrics = [["Proyectos activos",counts[0],FolderOpen],["Hallazgos abiertos",counts[1],Bug],["Críticos",counts[2],AlertTriangle],["Informes entregados",counts[3],FileText]] as const;
   return <><Header title="Panel" sub={date.charAt(0).toUpperCase()+date.slice(1)}><Button variant="outline" onClick={importData}><Download />Importar datos</Button><Button variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
     <div className="metric-grid">{metrics.map(([label,value,Icon]) => <div className="metric" key={label}><span><Icon />{label}</span><strong>{value}</strong></div>)}</div>
     <Section title="Proyectos en curso" action={data.projects.length ? <button className="text-link" onClick={() => go("proyectos")}>Ver todos</button> : null}>{data.projects.length ? <div className="data-table dashboard-table"><div className="table-head"><span>Proyecto</span><span>Tipo</span><span>Estado</span><span>Cliente</span><span /></div>{data.projects.slice(0,5).map(project => <button className="table-row" key={project.id} onClick={() => go("proyectos")}><span><b>{project.name}</b><small>{project.start} — {project.end}</small></span><span>{project.type}</span><Status tone="info">{project.status}</Status><span>{project.client}</span><span>→</span></button>)}</div> : <EmptyState icon={FolderOpen} title="Todavía no hay proyectos" text="Crea el primero o importa un archivo con tus datos." action={<Button onClick={create}><Plus />Crear proyecto</Button>} />}</Section>
