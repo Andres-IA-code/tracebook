@@ -216,6 +216,16 @@ export function WorkspaceApp() {
       },
     });
   };
+  const updateClient = (item: Client) => {
+    const prev = data.clients.find(c => c.id === item.id); if (!prev) return;
+    updateData({ ...data, clients: data.clients.map(c => c.id === item.id ? item : c) });
+    const label = { industry: "industria", contact: "contacto", email: "correo" } as const;
+    const changes = (["industry", "contact", "email"] as const)
+      .filter(k => (prev[k] ?? "").trim() !== (item[k] ?? "").trim())
+      .map(k => `${label[k]}: "${prev[k] || "—"}" → "${item[k] || "—"}"`);
+    log("Actualización", `Cliente "${item.name}": ${changes.join(" · ") || "sin cambios"}`);
+    confirm("Cliente actualizado");
+  };
   const saveFindingEdit = (item: Finding) => {
     updateData({ ...data, findings: data.findings.map(f => f.id === item.id ? item : f) });
     setEditingFinding(null);
@@ -270,7 +280,7 @@ export function WorkspaceApp() {
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} onEdit={setEditingFinding} onDelete={deleteFinding} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} onStatus={setProjectStatus} />}
-        {view === "clientes" && <Clients clients={data.clients} projects={data.projects} create={() => setCreateKind("client")} onDelete={deleteClient} />}
+        {view === "clientes" && <Clients clients={data.clients} projects={data.projects} create={() => setCreateKind("client")} onDelete={deleteClient} onUpdate={updateClient} />}
         {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} importData={startImport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
       </main>
     </div>
