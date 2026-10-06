@@ -252,6 +252,7 @@ export function WorkspaceApp() {
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
   const critical = data.findings.filter(finding => finding.severity === "Crítico" && finding.status !== "Cerrado").length;
   const deliveredReports = data.projects.filter(project => project.status === "Entregado").length;
+  const statusCounts = PROJECT_STATUSES.map(status => data.projects.filter(project => project.status === status).length);
   return <div className="app-shell">
     <aside className={cn("sidebar", mobileNav && "sidebar-open")}>
       <div className="brand"><span className="brand-mark" />{BRAND.name}<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
