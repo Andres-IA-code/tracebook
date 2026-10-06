@@ -569,7 +569,7 @@ function buildLatexPreviewHtml(project: Project, list: Finding[], settings: Sett
 </body></html>`;
 }
 
-function Reports({ projects, findings, settings }: { projects: Project[]; findings: Finding[]; settings: SettingsState }) {
+function Reports({ projects, findings, settings, onStatus }: { projects: Project[]; findings: Finding[]; settings: SettingsState; onStatus: (id: string, status: string) => void }) {
   const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
   const [preview, setPreview] = useState<Project | null>(null);
   const previewList = preview ? findings.filter(f => inProject(f, preview)) : [];
