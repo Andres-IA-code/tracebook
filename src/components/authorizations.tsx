@@ -105,7 +105,6 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
           }}
           onSign={() => setSigning(current)}
           onReject={() => { const reason = window.prompt("Motivo del rechazo"); if (reason !== null) patch(current.id, { status: "Rechazada", reason }, "Autorización rechazada"); }}
-          onRevoke={() => { const reason = window.prompt("Motivo de la revocación"); if (reason !== null) patch(current.id, { status: "Revocada", reason }, "Autorización revocada"); }}
         /> : <div className="empty-state"><span><ShieldCheck /></span><h3>Selecciona una autorización</h3><p>El documento y sus acciones se mostrarán aquí.</p></div>}</section>
       </div>
     </>}
