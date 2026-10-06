@@ -358,6 +358,9 @@ function buildReportLatex(project: Project, list: Finding[], settings: SettingsS
   const text = color(settings.latexTextColor, "141414");
   const secondary = color(settings.latexSecondaryColor, "757575");
   const contacts = [settings.teamPhone, settings.teamWebsite, settings.teamAddress].filter(Boolean).map(t);
+  const findingsBySeverity = SEV_ORDER
+    .map(severity => ({ severity, findings: list.filter(f => f.severity === severity) }))
+    .filter(group => group.findings.length > 0);
   const logoMatch = settings.latexLogo.match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=]+)$/);
   const logoExtension = logoMatch?.[1] === "jpeg" ? "jpg" : "png";
   const embeddedLogo = logoMatch ? `\\directlua{
@@ -379,59 +382,107 @@ local f=assert(io.open("team-logo.${logoExtension}","wb")) f:write(d) f:close()
 \\usepackage[T1]{fontenc}
 \\usepackage[spanish]{babel}
 \\usepackage[margin=2.5cm]{geometry}
-\\usepackage{xcolor,booktabs,tikz,fancyhdr,titlesec,graphicx}
+\\usepackage{xcolor,booktabs,tikz,fancyhdr,titlesec,graphicx,tabularx,array,needspace,hyperref}
 \\definecolor{vorange}{HTML}{${primary}}
 \\definecolor{vdark}{HTML}{${text}}
 \\definecolor{vgray}{HTML}{${secondary}}
-\\titleformat{\\section}{\\Large\\bfseries\\color{vdark}}{}{0pt}{}[\\color{vorange}\\titlerule]
+\\hypersetup{colorlinks=true,linkcolor=vdark,urlcolor=vorange,pdfauthor={${org}},pdftitle={Informe de prueba de penetración — ${t(project.name)}}}
+\\setcounter{tocdepth}{2}
+\\setlength{\\parindent}{0pt}
+\\setlength{\\parskip}{0.55em}
+\\renewcommand{\\arraystretch}{1.25}
+\\titleformat{\\section}{\\Large\\bfseries\\color{vdark}}{\\thesection}{0.65em}{}[\\color{vorange}\\titlerule]
+\\titleformat{\\subsection}{\\large\\bfseries\\color{vdark}}{\\thesubsection}{0.65em}{}
+\\titlespacing*{\\section}{0pt}{2.2em}{1em}
+\\titlespacing*{\\subsection}{0pt}{1.5em}{0.5em}
 \\pagestyle{fancy}\\fancyhf{}
+\\lhead{\\footnotesize\\color{vgray} ${t(project.name)}}
+\\rhead{\\footnotesize\\color{vgray} Informe de prueba de penetración}
 \\lfoot{\\footnotesize\\color{vgray} ${org} \\textperiodcentered{} Documento confidencial}
-\\rfoot{\\footnotesize\\color{vgray} \\thepage}
-\\renewcommand{\\headrulewidth}{0pt}
+\\rfoot{\\footnotesize\\color{vgray} Página \\thepage}
+\\renewcommand{\\headrulewidth}{0.4pt}
+\\renewcommand{\\headrule}{\\hbox to\\headwidth{\\color{vorange}\\leaders\\hrule height \\headrulewidth\\hfill}}
+
+\\newcommand{\\metarow}[2]{\\textcolor{vgray}{#1} & #2 \\\\[0.35em]}
+\\newcommand{\\findingmeta}[2]{\\textcolor{vgray}{\\textbf{#1}} & #2 \\\\}
 
 ${embeddedLogo}\\begin{document}
+
+% Portada
+\\thispagestyle{empty}
 \\noindent${logo}\\hspace{0.4cm}%
-\\begin{minipage}[c]{0.8\\textwidth}
-{\\Large\\bfseries ${org}}\\\\
-{\\small\\color{vgray} Informe de prueba de penetración${issuer ? ` \\textperiodcentered{} ${issuer}` : ""}${contacts.length ? `\\\\${contacts.join(" \\textperiodcentered{} ")}` : ""}}
+\\begin{minipage}[c]{0.78\\textwidth}
+{\\Large\\bfseries ${org}}\\\\[0.2em]
+{\\small\\color{vgray}${contacts.length ? contacts.join(" \\textperiodcentered{} ") : "Gestión e informes de pentest"}}
 \\end{minipage}
 
-\\vspace{1cm}
+\\vfill
+{\\color{vorange}\\rule{\\textwidth}{2pt}}\\par
+\\vspace{0.8cm}
 {\\Huge\\bfseries Informe de prueba de penetración}\\par
-{\\color{vorange}\\rule{\\textwidth}{2pt}}
+\\vspace{0.35cm}
+{\\LARGE\\color{vgray}${t(project.name)}}\\par
+\\vspace{1.2cm}
+\\begin{tabularx}{\\textwidth}{@{}>{\\raggedright\\arraybackslash}p{4cm}X@{}}
+\\metarow{Cliente}{\\textbf{${t(project.client)}}}
+\\metarow{Tipo de evaluación}{${t(project.type)}}
+\\metarow{Período}{${t(project.start)} --- ${t(project.end)}}
+\\metarow{Fecha de emisión}{${date}}
+${issuer ? `\\metarow{Responsable}{${issuer.replace(/^Emitido por /, "")}}` : ""}
+\\end{tabularx}
+\\vfill
+{\\small\\bfseries\\color{vorange} DOCUMENTO CONFIDENCIAL}\\par
+{\\footnotesize\\color{vgray}ID del proyecto: ${t(project.id)}}
+\\clearpage
 
-\\section*{Identificación del proyecto}
-\\begin{tabular}{@{}ll@{}}
-{\\color{vgray}Proyecto} & \\textbf{${t(project.name)}} \\\\
-{\\color{vgray}ID de proyecto} & \\texttt{${t(project.id)}} \\\\
-{\\color{vgray}Cliente} & ${t(project.client)} \\\\
-{\\color{vgray}Tipo de evaluación} & ${t(project.type)} \\\\
-{\\color{vgray}Estado} & ${t(project.status)} \\\\
-{\\color{vgray}Período de ejecución} & ${t(project.start)} --- ${t(project.end)} \\\\
-{\\color{vgray}Fecha de emisión} & ${date} \\\\
-\\end{tabular}
+% Índice
+\\thispagestyle{plain}
+\\tableofcontents
+\\clearpage
 
-\\section*{Resumen ejecutivo}
-Se identificaron ${list.length} hallazgos durante la evaluación.
+\\section{Resumen ejecutivo}
+Durante la evaluación se identificaron \\textbf{${list.length} hallazgos}. La siguiente tabla presenta su distribución por severidad para facilitar la priorización.
 
 \\begin{center}
-\\begin{tabular}{lr}
+\\begin{tabular}{@{}lr@{}}
 \\toprule
 \\textbf{Severidad} & \\textbf{Cantidad} \\\\
 \\midrule
-${counts.map(([s, n]) => `${t(s)} & ${n} \\\\`).join("\n")}
+${counts.length ? counts.map(([s, n]) => `${t(s)} & ${n} \\\\`).join("\n") : `Sin hallazgos & 0 \\\\`}
 \\bottomrule
 \\end{tabular}
 \\end{center}
 
-\\section*{Detalle de hallazgos}
-${list.map((f, i) => `\\subsection*{${i + 1}. ${t(f.title)}}
-\\textbf{Severidad:} ${t(f.severity)} \\quad \\textbf{Estado:} ${t(f.status)}
+\\section{Identificación del proyecto}
+\\begin{tabularx}{\\textwidth}{@{}>{\\raggedright\\arraybackslash}p{4.2cm}X@{}}
+\\metarow{Proyecto}{\\textbf{${t(project.name)}}}
+\\metarow{ID de proyecto}{\\texttt{${t(project.id)}}}
+\\metarow{Cliente}{${t(project.client)}}
+\\metarow{Tipo de evaluación}{${t(project.type)}}
+\\metarow{Estado}{${t(project.status)}}
+\\metarow{Período de ejecución}{${t(project.start)} --- ${t(project.end)}}
+\\metarow{Fecha de emisión}{${date}}
+\\end{tabularx}
 
+\\section{Detalle de hallazgos}
+${findingsBySeverity.length ? findingsBySeverity.map(group => `\\subsection{Severidad ${t(group.severity)}}
+${group.findings.map((f, i) => `\\Needspace{8\\baselineskip}
+\\subsubsection*{${i + 1}. ${t(f.title)}}
+\\addcontentsline{toc}{subsubsection}{${t(f.title)}}
+{\\color{vorange}\\rule{\\textwidth}{0.8pt}}
+\\begin{tabularx}{\\textwidth}{@{}p{2.6cm}X@{}}
+\\findingmeta{Severidad}{${t(f.severity)}}
+\\findingmeta{Estado}{${t(f.status)}}
+\\end{tabularx}
+
+\\textbf{Descripción}\\par
 ${multi(f.description || "Sin descripción")}
-`).join("\n")}
+
+\\vspace{1em}
+`).join("\n")}`).join("\n") : "No se registraron hallazgos para este proyecto."}
+
 \\vfill
-{\\footnotesize\\color{vgray} ${org}${contacts.length ? ` \\textperiodcentered{} ${contacts.join(" \\textperiodcentered{} ")}` : ""} \\textperiodcentered{} ${date} \\textperiodcentered{} Documento confidencial}
+{\\footnotesize\\color{vgray}Informe generado con ${BRAND.name}${contacts.length ? ` \\textperiodcentered{} ${contacts.join(" \\textperiodcentered{} ")}` : ""}.}
 
 \\end{document}
 `;
