@@ -212,6 +212,24 @@ export function WorkspaceApp() {
       },
     });
   };
+  const saveFindingEdit = (item: Finding) => {
+    updateData({ ...data, findings: data.findings.map(f => f.id === item.id ? item : f) });
+    setEditingFinding(null);
+    confirm("Hallazgo actualizado");
+  };
+  const deleteFinding = (id: string) => {
+    const f = data.findings.find(x => x.id === id); if (!f) return;
+    setPendingDelete({
+      group: "Hallazgos", heading: "Eliminar hallazgo",
+      description: <>Se eliminará el hallazgo <b>{f.title}</b>. Esta acción no se puede deshacer.</>,
+      confirmLabel: "Eliminar",
+      run: () => {
+        updateData({ ...data, findings: data.findings.filter(x => x.id !== id) });
+        log("Eliminación", `Hallazgo "${f.title}"`);
+        confirm("Hallazgo eliminado");
+      },
+    });
+  };
   const activeProjects = data.projects.filter(project => project.status !== "Entregado").length;
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
   const critical = data.findings.filter(finding => finding.severity === "Crítico" && finding.status !== "Cerrado").length;
@@ -229,7 +247,7 @@ export function WorkspaceApp() {
         {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} exportData={doExport} importData={startImport} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
-        {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
+        {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} onEdit={setEditingFinding} onDelete={deleteFinding} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
@@ -237,6 +255,7 @@ export function WorkspaceApp() {
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
+    {editingFinding ? <CreateDialog kind="finding" editing={editingFinding} projects={data.projects} onClose={() => setEditingFinding(null)} onSave={(_kind, item) => saveFindingEdit(item as Finding)} /> : null}
     {pendingAuditDelete ? (() => { const entry = pendingAuditDelete === "all" ? null : audit.find(e => e.id === pendingAuditDelete); return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingAuditDelete(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="audit-title">
       <div className="modal-head"><div><small>Registro de auditoría</small><h2 id="audit-title">{pendingAuditDelete === "all" ? "Borrar todo el registro" : "Eliminar registro"}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingAuditDelete(null)}><X /></Button></div>
       <form onSubmit={event => { event.preventDefault(); applyAuditDelete(); }}>
