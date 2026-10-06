@@ -2,7 +2,7 @@ import { BRAND } from "@/brand";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Pencil, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
+  LayoutDashboard, LogOut, Menu, Pencil, Play, Plus, RotateCcw, Search, Send, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ type PendingDelete = { group: string; heading: string; description: ReactNode; c
 
 const PROJECT_STATUSES = ["Preparación", "En prueba", "En revisión", "Entregado"];
 const PROJECT_STATUS_TONES: Record<string, string> = { "Preparación": "neutral", "En prueba": "info", "En revisión": "warning", "Entregado": "success" };
+const PROJECT_STATUS_ICONS: Record<string, typeof FolderOpen> = { "Preparación": FolderOpen, "En prueba": Play, "En revisión": Eye, "Entregado": Send };
 const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [] };
 const STORAGE_KEY = "vertice-workspace-data";
 const SETTINGS_KEY = "vertice-settings";
