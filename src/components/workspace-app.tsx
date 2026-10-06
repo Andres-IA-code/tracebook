@@ -2,7 +2,7 @@ import { BRAND } from "@/brand";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
+  LayoutDashboard, LogOut, Menu, Pencil, Plus, RotateCcw, Search, Settings, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -99,6 +99,7 @@ export function WorkspaceApp() {
   const [data, setData] = useState<DataState>(EMPTY_DATA);
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [createKind, setCreateKind] = useState<CreateKind>(null);
+  const [editingFinding, setEditingFinding] = useState<Finding | null>(null);
   const [pendingReset, setPendingReset] = useState(false);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   useEffect(() => { try { const a = JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]"); if (Array.isArray(a)) setAudit(a); } catch { /* ignore */ } }, []);
@@ -211,6 +212,24 @@ export function WorkspaceApp() {
       },
     });
   };
+  const saveFindingEdit = (item: Finding) => {
+    updateData({ ...data, findings: data.findings.map(f => f.id === item.id ? item : f) });
+    setEditingFinding(null);
+    confirm("Hallazgo actualizado");
+  };
+  const deleteFinding = (id: string) => {
+    const f = data.findings.find(x => x.id === id); if (!f) return;
+    setPendingDelete({
+      group: "Hallazgos", heading: "Eliminar hallazgo",
+      description: <>Se eliminará el hallazgo <b>{f.title}</b>. Esta acción no se puede deshacer.</>,
+      confirmLabel: "Eliminar",
+      run: () => {
+        updateData({ ...data, findings: data.findings.filter(x => x.id !== id) });
+        log("Eliminación", `Hallazgo "${f.title}"`);
+        confirm("Hallazgo eliminado");
+      },
+    });
+  };
   const activeProjects = data.projects.filter(project => project.status !== "Entregado").length;
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
   const critical = data.findings.filter(finding => finding.severity === "Crítico" && finding.status !== "Cerrado").length;
@@ -228,7 +247,7 @@ export function WorkspaceApp() {
         {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,pendingReports]} go={go} create={() => setCreateKind("project")} exportData={doExport} importData={startImport} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onDelete={deleteProject} />}
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
-        {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} />}
+        {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} onEdit={setEditingFinding} onDelete={deleteFinding} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} />}
         {view === "clientes" && <Clients clients={data.clients} create={() => setCreateKind("client")} onDelete={deleteClient} />}
@@ -236,6 +255,7 @@ export function WorkspaceApp() {
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
+    {editingFinding ? <CreateDialog kind="finding" editing={editingFinding} projects={data.projects} onClose={() => setEditingFinding(null)} onSave={(_kind, item) => saveFindingEdit(item as Finding)} /> : null}
     {pendingAuditDelete ? (() => { const entry = pendingAuditDelete === "all" ? null : audit.find(e => e.id === pendingAuditDelete); return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingAuditDelete(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="audit-title">
       <div className="modal-head"><div><small>Registro de auditoría</small><h2 id="audit-title">{pendingAuditDelete === "all" ? "Borrar todo el registro" : "Eliminar registro"}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPendingAuditDelete(null)}><X /></Button></div>
       <form onSubmit={event => { event.preventDefault(); applyAuditDelete(); }}>
@@ -310,11 +330,11 @@ function Projects({ projects, create, onDelete }: { projects: Project[]; create:
   return <><Header title="Proyectos" sub={`${projects.length} proyectos`}><label className="search"><Search /><input aria-label="Buscar proyecto o cliente" placeholder="Buscar proyecto o cliente" value={query} onChange={e=>setQuery(e.target.value)}/></label><Button onClick={create}><Plus />Nuevo proyecto</Button></Header><Section>{projects.length ? <><div className="data-table projects-table"><div className="table-head"><span>Proyecto</span><span>Estado</span><span>Fechas</span><span>Cliente</span><span>Tipo</span><span /></div>{rows.map(project => <div className="table-row" key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><Status tone="info">{project.status}</Status><span>{project.start} — {project.end}</span><span>{project.client}</span><span>{project.type}</span><span><button className="icon-danger" aria-label={`Eliminar ${project.name}`} title="Eliminar proyecto" onClick={() => onDelete(project.id)}><Trash2 /></button></span></div>)}</div><div className="table-foot"><span>Mostrando {rows.length} de {projects.length}</span></div></> : <EmptyState icon={FolderOpen} title="Sin proyectos cargados" text="Registra un proyecto real para comenzar a trabajar." action={<Button onClick={create}><Plus />Nuevo proyecto</Button>} />}</Section></>;
 }
 
-function Findings({ findings, create }: { findings: Finding[]; create: () => void }) {
+function Findings({ findings, create, onEdit, onDelete }: { findings: Finding[]; create: () => void; onEdit: (finding: Finding) => void; onDelete: (id: string) => void }) {
   const [query,setQuery] = useState(""); const [selected,setSelected] = useState<string | null>(null);
   const visible = findings.filter(f => f.title.toLowerCase().includes(query.toLowerCase()));
   const current = findings.find(f => f.id === selected);
-  return <><Header title="Hallazgos" sub={`${findings.length} hallazgos registrados`}><Button onClick={create}><Plus />Nuevo hallazgo</Button></Header>{findings.length ? <div className="findings-grid"><Section><div className="finding-tools"><label className="search wide"><Search/><input aria-label="Buscar hallazgos" placeholder="Buscar hallazgos" value={query} onChange={e=>setQuery(e.target.value)}/></label></div><div className="finding-list">{visible.map((finding,index)=><button key={finding.id} className={selected===finding.id?"active":""} onClick={()=>setSelected(finding.id)}><span>{String(index+1).padStart(2,"0")}</span><div><b>{finding.title}</b><small>{finding.project || "Sin proyecto"}</small></div><span className={cn("severity",sevClass[finding.severity])}>{finding.severity}</span></button>)}</div></Section><Section>{current ? <div className="detail-body"><div className="detail-head"><span>{current.status}</span><h2>{current.title}</h2></div><div className="detail-fields"><label>Severidad<span>{current.severity}</span></label><label>Proyecto<span>{current.project || "Sin asignar"}</span></label></div><div><div className="field-title">Descripción</div><div className="text-box">{current.description || "Sin descripción"}</div></div></div> : <EmptyState icon={Bug} title="Selecciona un hallazgo" text="El detalle se mostrará aquí." />}</Section></div> : <Section><EmptyState icon={Bug} title="Sin hallazgos registrados" text="Carga únicamente hallazgos confirmados de tus pruebas." action={<Button onClick={create}><Plus />Nuevo hallazgo</Button>} /></Section>}</>;
+  return <><Header title="Hallazgos" sub={`${findings.length} hallazgos registrados`}><Button onClick={create}><Plus />Nuevo hallazgo</Button></Header>{findings.length ? <div className="findings-grid"><Section><div className="finding-tools"><label className="search wide"><Search/><input aria-label="Buscar hallazgos" placeholder="Buscar hallazgos" value={query} onChange={e=>setQuery(e.target.value)}/></label></div><div className="finding-list">{visible.map((finding,index)=><button key={finding.id} className={selected===finding.id?"active":""} onClick={()=>setSelected(finding.id)}><span>{String(index+1).padStart(2,"0")}</span><div><b>{finding.title}</b><small>{finding.project || "Sin proyecto"}</small></div><span className={cn("severity",sevClass[finding.severity])}>{finding.severity}</span></button>)}</div></Section><Section>{current ? <div className="detail-body"><div className="detail-head"><span>{current.status}</span><h2>{current.title}</h2><span style={{display:"flex",gap:6,marginLeft:"auto"}}><Button variant="outline" size="sm" onClick={() => onEdit(current)}><Pencil />Editar</Button><button className="icon-danger" aria-label={`Eliminar ${current.title}`} title="Eliminar hallazgo" onClick={() => onDelete(current.id)}><Trash2 /></button></span></div><div className="detail-fields"><label>Severidad<span>{current.severity}</span></label><label>Proyecto<span>{current.project || "Sin asignar"}</span></label></div><div><div className="field-title">Descripción</div><div className="text-box">{current.description || "Sin descripción"}</div></div></div> : <EmptyState icon={Bug} title="Selecciona un hallazgo" text="El detalle se mostrará aquí." />}</Section></div> : <Section><EmptyState icon={Bug} title="Sin hallazgos registrados" text="Carga únicamente hallazgos confirmados de tus pruebas." action={<Button onClick={create}><Plus />Nuevo hallazgo</Button>} /></Section>}</>;
 }
 
 function Library({ templates, create, onDelete }: { templates: Template[]; create: () => void; onDelete: (id: string) => void }) {
@@ -586,11 +606,11 @@ function SettingsPage({ settings, onSave, exportData, importData, audit, onDelet
   </>;
 }
 
-function CreateDialog({ kind, projects, templates = [], onClose, onSave }: { kind: Exclude<CreateKind,null>; projects: Project[]; templates?: Template[]; onClose: () => void; onSave: (kind: Exclude<CreateKind,null>, item: Project | Finding | Client | Template) => void }) {
-  const labels = { project: "Nuevo proyecto", finding: "Nuevo hallazgo", client: "Nuevo cliente", template: "Nueva plantilla" };
-  const [tplId, setTplId] = useState(""); const [fTitle, setFTitle] = useState(""); const [fSev, setFSev] = useState("Crítico"); const [fDesc, setFDesc] = useState("");
+function CreateDialog({ kind, projects, templates = [], editing, onClose, onSave }: { kind: Exclude<CreateKind,null>; projects: Project[]; templates?: Template[]; editing?: Finding; onClose: () => void; onSave: (kind: Exclude<CreateKind,null>, item: Project | Finding | Client | Template) => void }) {
+  const labels = { project: "Nuevo proyecto", finding: editing ? "Editar hallazgo" : "Nuevo hallazgo", client: "Nuevo cliente", template: "Nueva plantilla" };
+  const [tplId, setTplId] = useState(""); const [fTitle, setFTitle] = useState(editing?.title ?? ""); const [fSev, setFSev] = useState(editing?.severity ?? "Crítico"); const [fDesc, setFDesc] = useState(editing?.description ?? "");
   const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); const form = new FormData(event.currentTarget); const id = crypto.randomUUID();
+    event.preventDefault(); const form = new FormData(event.currentTarget); const id = editing?.id ?? crypto.randomUUID();
     if (kind === "project") onSave(kind,{id,name:String(form.get("name")),client:String(form.get("client")),type:String(form.get("type")),status:String(form.get("status")),start:String(form.get("start")),end:String(form.get("end"))});
     if (kind === "finding") onSave(kind,{id,title:String(form.get("title")),severity:String(form.get("severity")),status:String(form.get("status")),projectId:String(form.get("projectId")) || undefined,project:projects.find(p=>p.id===form.get("projectId"))?.name ?? "",description:String(form.get("description"))});
     if (kind === "client") onSave(kind,{id,name:String(form.get("name")),industry:String(form.get("industry")),contact:String(form.get("contact")),email:String(form.get("email"))});
@@ -598,12 +618,12 @@ function CreateDialog({ kind, projects, templates = [], onClose, onSave }: { kin
   };
   return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if(event.target===event.currentTarget) onClose(); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div className="modal-head"><div><small>Carga de datos</small><h2 id="dialog-title">{labels[kind]}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={onClose}><X/></Button></div><form onSubmit={submit}>
     {kind === "project" && <><Field label="Nombre del proyecto" name="name" required/><Field label="Cliente" name="client" required/><div className="form-grid"><SelectField label="Tipo" name="type" options={["Aplicación web","API","App móvil","Red interna","Red externa","Nube"]}/><SelectField label="Estado" name="status" options={["Preparación","En prueba","En revisión","Entregado"]}/><Field label="Fecha de inicio" name="start" type="date" required/><Field label="Fecha de fin" name="end" type="date" required/></div></>}
-    {kind === "finding" && <>{templates.length > 0 && <label className="form-field">Partir de una plantilla<select value={tplId} onChange={e => { const t = templates.find(x => x.id === e.target.value); setTplId(e.target.value); if (t) { setFTitle(t.title); setFSev(t.severity); setFDesc([t.cwe && `CWE: ${t.cwe}`, `Tipo: ${t.category}`].filter(Boolean).join("\n")); } }}><option value="">Sin plantilla</option>{templates.map(t=><option key={t.id} value={t.id}>{t.title}{t.cwe ? ` (${t.cwe})` : ""}</option>)}</select></label>}<Field label="Título" name="title" required value={fTitle} onChange={setFTitle}/><div className="form-grid"><SelectField label="Severidad" name="severity" options={["Crítico","Alto","Medio","Bajo"]} value={fSev} onChange={setFSev}/><SelectField label="Estado" name="status" options={["Borrador","En revisión","Revisado","Cerrado"]}/></div><label className="form-field">Proyecto<select name="projectId"><option value="">Sin asignar</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label className="form-field">Descripción<textarea name="description" rows={4} value={fDesc} onChange={e => setFDesc(e.target.value)}/></label></>}
+    {kind === "finding" && <>{!editing && templates.length > 0 && <label className="form-field">Partir de una plantilla<select value={tplId} onChange={e => { const t = templates.find(x => x.id === e.target.value); setTplId(e.target.value); if (t) { setFTitle(t.title); setFSev(t.severity); setFDesc([t.cwe && `CWE: ${t.cwe}`, `Tipo: ${t.category}`].filter(Boolean).join("\n")); } }}><option value="">Sin plantilla</option>{templates.map(t=><option key={t.id} value={t.id}>{t.title}{t.cwe ? ` (${t.cwe})` : ""}</option>)}</select></label>}<Field label="Título" name="title" required value={fTitle} onChange={setFTitle}/><div className="form-grid"><SelectField label="Severidad" name="severity" options={["Crítico","Alto","Medio","Bajo"]} value={fSev} onChange={setFSev}/><SelectField label="Estado" name="status" options={["Borrador","En revisión","Revisado","Cerrado"]} defaultValue={editing?.status}/></div><label className="form-field">Proyecto<select name="projectId" defaultValue={editing?.projectId ?? ""}><option value="">Sin asignar</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label className="form-field">Descripción<textarea name="description" rows={4} value={fDesc} onChange={e => setFDesc(e.target.value)}/></label></>}
     {kind === "client" && <><Field label="Nombre o razón social" name="name" required/><Field label="Industria" name="industry"/><Field label="Contacto principal" name="contact"/><Field label="Correo" name="email" type="email"/></>}
     {kind === "template" && <><Field label="Nombre de la plantilla" name="title" required/><div className="form-grid"><Field label="CWE" name="cwe" placeholder="CWE-000"/><SelectField label="Tipo" name="category" options={["Web","API","Red","Móvil","Nube"]}/><SelectField label="Severidad" name="severity" options={["Crítico","Alto","Medio","Bajo"]}/></div></>}
     <div className="modal-actions"><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button><Button type="submit">Guardar datos</Button></div>
   </form></section></div>;
 }
 function Field({label,name,type="text",required,placeholder,value,onChange}:{label:string;name:string;type?:string;required?:boolean;placeholder?:string;value?:string;onChange?:(value:string)=>void}) { return <label className="form-field">{label}<input name={name} type={type} required={required} placeholder={placeholder} value={value} onChange={onChange ? event => onChange(event.target.value) : undefined}/></label>; }
-function SelectField({label,name,options,empty,value,onChange}:{label:string;name:string;options:string[];empty?:string;value?:string;onChange?:(value:string)=>void}) { return <label className="form-field">{label}<select name={name} value={value} onChange={onChange ? event => onChange(event.target.value) : undefined}>{empty ? <option value="">{empty}</option> : null}{options.map(option=><option key={option}>{option}</option>)}</select></label>; }
+function SelectField({label,name,options,empty,value,onChange,defaultValue}:{label:string;name:string;options:string[];empty?:string;value?:string;onChange?:(value:string)=>void;defaultValue?:string | undefined}) { return <label className="form-field">{label}<select name={name} value={value} defaultValue={value === undefined ? defaultValue : undefined} onChange={onChange ? event => onChange(event.target.value) : undefined}>{empty ? <option value="">{empty}</option> : null}{options.map(option=><option key={option}>{option}</option>)}</select></label>; }
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="form-field color-field">{label}<span><input type="color" value={value} onChange={event => onChange(event.target.value.toUpperCase())} /><input aria-label={`${label} hexadecimal`} value={value} maxLength={7} pattern="#[0-9A-Fa-f]{6}" onChange={event => onChange(event.target.value)} /></span></label>; }
