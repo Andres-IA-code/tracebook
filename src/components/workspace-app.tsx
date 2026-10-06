@@ -141,7 +141,7 @@ export function WorkspaceApp() {
     setPendingImport(null);
     if (mode === "replace") {
       updateData(payload.data);
-      if (payload.settings) { const next = { ...DEFAULT_SETTINGS, ...payload.settings }; setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); }
+      if (payload.settings) { const { emailAlerts: _ea, reportAlerts: _ra, ...importedSettings } = payload.settings as SettingsState & { emailAlerts?: unknown; reportAlerts?: unknown }; void _ea; void _ra; const next = { ...DEFAULT_SETTINGS, ...importedSettings }; setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); }
       log("Importación", `Reemplazo total desde ${name}: ${countOf(payload.data)}`);
       confirm("Datos importados");
     } else {
