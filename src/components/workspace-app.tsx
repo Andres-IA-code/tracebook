@@ -325,6 +325,7 @@ function Library({ templates, create, onDelete }: { templates: Template[]; creat
 }
 
 type ReportFormat = "latex" | "pdf" | "docx" | "html" | "json";
+const inProject = (f: Finding, p: Project) => f.projectId ? f.projectId === p.id : (f.project ?? "").trim().toLowerCase() === p.name.trim().toLowerCase();
 const SEV_ORDER = ["Crítico", "Alto", "Medio", "Bajo", "Sin clasificar"];
 // Normaliza variantes (p. ej. "Crítica", "alta") para que ningún hallazgo quede fuera del informe.
 const sevOf = (f: { severity: string }) => { const v = (f.severity ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); if (v.startsWith("crit")) return "Crítico"; if (v.startsWith("alt")) return "Alto"; if (v.startsWith("med")) return "Medio"; if (v.startsWith("baj")) return "Bajo"; return "Sin clasificar"; };
@@ -491,7 +492,7 @@ ${multi(f.description || "Sin descripción")}
 }
 
 function generateReport(project: Project, findings: Finding[], format: ReportFormat, settings: SettingsState) {
-  const list = findings.filter(f => f.projectId === project.id)
+  const list = findings.filter(f => inProject(f, project))
     .sort((a, b) => SEV_ORDER.indexOf(sevOf(a)) - SEV_ORDER.indexOf(sevOf(b)));
   const html = buildReportHtml(project, list, settings);
   const base = `Informe-${project.name.replace(/[^\w\-]+/g, "_")}`;
@@ -532,8 +533,8 @@ function buildLatexPreviewHtml(project: Project, list: Finding[], settings: Sett
 function Reports({ projects, findings, settings }: { projects: Project[]; findings: Finding[]; settings: SettingsState }) {
   const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
   const [preview, setPreview] = useState<Project | null>(null);
-  const previewList = preview ? findings.filter(f => f.projectId === preview.id) : [];
-  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>f.projectId===project.id).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select>{fmt === "latex" ? <Button size="sm" variant="outline" disabled={!total} onClick={() => setPreview(project)}><Eye/>Vista previa</Button> : null}<Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}
+  const previewList = preview ? findings.filter(f => inProject(f, preview)) : [];
+  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{(() => { const loose = findings.filter(f => !projects.some(p => inProject(f, p))).length; return loose ? <Section><p className="form-error">{loose === 1 ? "Hay 1 hallazgo sin proyecto asignado" : `Hay ${loose} hallazgos sin proyecto asignado`}: no aparece en ningún informe. Editalo en Hallazgos y elegí su proyecto.</p></Section> : null; })()}{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>inProject(f, project)).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select>{fmt === "latex" ? <Button size="sm" variant="outline" disabled={!total} onClick={() => setPreview(project)}><Eye/>Vista previa</Button> : null}<Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}
   {preview ? <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setPreview(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="latex-preview-title" style={{ width: "min(860px, 96vw)", maxWidth: "none" }}>
     <div className="modal-head"><div><small>Vista previa LaTeX</small><h2 id="latex-preview-title">{preview.name}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPreview(null)}><X/></Button></div>
     <iframe title="Vista previa del informe LaTeX" srcDoc={buildLatexPreviewHtml(preview, previewList, settings)} style={{ width: "100%", height: "65vh", border: 0, display: "block" }} />
