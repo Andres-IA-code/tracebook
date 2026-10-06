@@ -4,9 +4,7 @@ En el Río de la Plata, *la papa* es lo esencial, la posta: lo que realmente ten
 
 Aplicación de escritorio de código abierto para documentar pentest autorizados: proyectos, autorizaciones firmadas, hallazgos, biblioteca de plantillas, informes y auditoría.
 
-![Panel](docs/screenshots/panel.png)
-![Hallazgos](docs/screenshots/hallazgos.png)
-![Informe LaTeX](docs/screenshots/informe.png)
+
 
 ## Funciones
 - Proyectos y clientes con borrado en cascada.
