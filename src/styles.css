@@ -173,7 +173,7 @@ h6,
 .table-row small { color: var(--muted-foreground); font-size: 12px; margin-top: 2px; }
 .table-row > svg { width: 19px; color: var(--muted-foreground); }
 .dashboard-table .table-head, .dashboard-table .table-row { grid-template-columns: 2fr 1.2fr 1.8fr 1fr 30px; }
-.projects-table .table-head, .projects-table .table-row { grid-template-columns: 2.2fr 1.2fr 1.4fr .8fr 1.1fr 30px; }
+.projects-table .table-head, .projects-table .table-row { grid-template-columns: 2.2fr 1.3fr 1.4fr .8fr 1.1fr 70px; }
 .audit-table .table-head, .audit-table .table-row { grid-template-columns: 1.1fr 1fr .9fr 2.2fr 40px; }
 .library-table .table-head, .library-table .table-row { grid-template-columns: 2.2fr 1fr .8fr 1.2fr .8fr; }
 .progress-cell { display: flex !important; flex-direction: row !important; align-items: center; gap: 12px; }
