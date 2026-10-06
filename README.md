@@ -25,7 +25,7 @@ Descarga el instalador desde *Releases*.
 - **Linux**: `.AppImage` (`chmod +x LaPapa-*.AppImage && ./LaPapa-*.AppImage`) o `.deb` (`sudo apt install ./LaPapa-*.deb`).
 
 ### Verificar la huella SHA-256
-Compara con el valor publicado en la release:
+Las huellas oficiales de cada archivo se publican en el archivo `SHA256SUMS.txt` de cada *Release*: descargalo de la misma página que el instalador y compara su contenido con el resultado del comando:
 - Windows: `Get-FileHash .\LaPapa-*.exe -Algorithm SHA256`
 - macOS: `shasum -a 256 LaPapa-*.dmg`
 - Linux: `sha256sum LaPapa-*.AppImage`
