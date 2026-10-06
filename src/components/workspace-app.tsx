@@ -216,6 +216,16 @@ export function WorkspaceApp() {
       },
     });
   };
+  const updateClient = (item: Client) => {
+    const prev = data.clients.find(c => c.id === item.id); if (!prev) return;
+    updateData({ ...data, clients: data.clients.map(c => c.id === item.id ? item : c) });
+    const label = { industry: "industria", contact: "contacto", email: "correo" } as const;
+    const changes = (["industry", "contact", "email"] as const)
+      .filter(k => (prev[k] ?? "").trim() !== (item[k] ?? "").trim())
+      .map(k => `${label[k]}: "${prev[k] || "—"}" → "${item[k] || "—"}"`);
+    log("Actualización", `Cliente "${item.name}": ${changes.join(" · ") || "sin cambios"}`);
+    confirm("Cliente actualizado");
+  };
   const saveFindingEdit = (item: Finding) => {
     updateData({ ...data, findings: data.findings.map(f => f.id === item.id ? item : f) });
     setEditingFinding(null);
@@ -270,7 +280,7 @@ export function WorkspaceApp() {
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} onEdit={setEditingFinding} onDelete={deleteFinding} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} onStatus={setProjectStatus} />}
-        {view === "clientes" && <Clients clients={data.clients} projects={data.projects} create={() => setCreateKind("client")} onDelete={deleteClient} />}
+        {view === "clientes" && <Clients clients={data.clients} projects={data.projects} create={() => setCreateKind("client")} onDelete={deleteClient} onUpdate={updateClient} />}
         {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} importData={startImport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
       </main>
     </div>
@@ -585,15 +595,30 @@ function Reports({ projects, findings, settings, onStatus }: { projects: Project
   </section></div> : null}</>;
 }
 
-function Clients({ clients, projects, create, onDelete }: { clients: Client[]; projects: Project[]; create: () => void; onDelete: (id: string) => void }) {
+function Clients({ clients, projects, create, onDelete, onUpdate }: { clients: Client[]; projects: Project[]; create: () => void; onDelete: (id: string) => void; onUpdate: (client: Client) => void }) {
   const [viewing, setViewing] = useState<Client | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ industry: "", contact: "", email: "" });
+  const open = (client: Client) => { setViewing(client); setEditing(false); };
   const del = (client: Client) => onDelete(client.id);
-  return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span><span className="row-actions"><button className="icon-danger icon-edit" aria-label={`Ver detalles de ${client.name}`} title="Ver detalles" onClick={() => setViewing(client)}><Eye /></button><button className="icon-danger" aria-label={`Eliminar ${client.name}`} title="Eliminar cliente" onClick={() => del(client)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section>
+  const startEdit = () => { if (!viewing) return; setDraft({ industry: viewing.industry, contact: viewing.contact, email: viewing.email }); setEditing(true); };
+  const saveEdit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!viewing) return;
+    const next = { ...viewing, industry: draft.industry.trim(), contact: draft.contact.trim(), email: draft.email.trim() };
+    onUpdate(next); setViewing(next); setEditing(false);
+  };
+  return <><Header title="Clientes" sub={`${clients.length} clientes registrados`}><Button onClick={create}><Plus />Nuevo cliente</Button></Header><Section>{clients.length ? <div className="simple-records">{clients.map(client=><div key={client.id}><span className="record-avatar">{client.name.slice(0,2).toUpperCase()}</span><span><b>{client.name}</b><small>{client.industry || "Sin industria"}</small></span><span><b>{client.contact || "Sin contacto"}</b><small>{client.email || "Sin correo"}</small></span><span className="row-actions"><button className="icon-danger icon-edit" aria-label={`Ver detalles de ${client.name}`} title="Ver detalles" onClick={() => open(client)}><Eye /></button><button className="icon-danger" aria-label={`Eliminar ${client.name}`} title="Eliminar cliente" onClick={() => del(client)}><Trash2 /></button></span></div>)}</div> : <EmptyState icon={Building2} title="Sin clientes cargados" text="Registra clientes reales para vincularlos con sus proyectos." action={<Button onClick={create}><Plus />Nuevo cliente</Button>} />}</Section>
   {viewing ? (() => { const linked = projects.filter(p => p.client === viewing.name); return <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setViewing(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="client-title">
     <div className="modal-head"><div><small>Cliente</small><h2 id="client-title">{viewing.name}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setViewing(null)}><X /></Button></div>
-    <div className="data-table"><div className="table-row"><span>Industria</span><b>{viewing.industry || "—"}</b></div><div className="table-row"><span>Contacto</span><b>{viewing.contact || "—"}</b></div><div className="table-row"><span>Correo</span><b>{viewing.email || "—"}</b></div><div className="table-row"><span>Proyectos vinculados</span><b>{linked.length}</b></div></div>
+    {editing ? <form className="stack" onSubmit={saveEdit}>
+      <label className="form-field">Industria<input value={draft.industry} onChange={e => setDraft(d => ({ ...d, industry: e.target.value }))} placeholder="Ej.: Banca, Retail, Salud" /></label>
+      <label className="form-field">Contacto<input value={draft.contact} onChange={e => setDraft(d => ({ ...d, contact: e.target.value }))} placeholder="Nombre y apellido" /></label>
+      <label className="form-field">Correo<input type="email" value={draft.email} onChange={e => setDraft(d => ({ ...d, email: e.target.value }))} placeholder="contacto@cliente.com" /></label>
+      <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setEditing(false)}>Cancelar</Button><Button type="submit"><Check />Guardar cambios</Button></div>
+    </form> : <><div className="data-table"><div className="table-row"><span>Industria</span><b>{viewing.industry || "—"}</b></div><div className="table-row"><span>Contacto</span><b>{viewing.contact || "—"}</b></div><div className="table-row"><span>Correo</span><b>{viewing.email || "—"}</b></div><div className="table-row"><span>Proyectos vinculados</span><b>{linked.length}</b></div></div>
     {linked.length ? <div className="data-table"><div className="table-head"><span>Proyecto</span><span>Estado</span><span>Período</span></div>{linked.map(p => <div className="table-row" key={p.id}><span><b>{p.name}</b><small>{p.type}</small></span><Status tone={(PROJECT_STATUS_TONES[p.status] ?? "neutral") as "info" | "neutral" | "success" | "warning"}>{p.status}</Status><span>{p.start} — {p.end}</span></div>)}</div> : <p style={{ padding: "0 20px", color: "var(--muted-foreground)" }}>Este cliente todavía no tiene proyectos vinculados.</p>}
-    <div className="modal-actions"><Button variant="outline" onClick={() => del(viewing)}><Trash2 />Eliminar</Button><Button onClick={() => setViewing(null)}>Cerrar</Button></div>
+    <div className="modal-actions"><Button variant="outline" onClick={startEdit}><Pencil />Editar datos</Button><Button variant="outline" onClick={() => del(viewing)}><Trash2 />Eliminar</Button><Button onClick={() => setViewing(null)}>Cerrar</Button></div></>}
   </section></div>; })() : null}</>;
 }
 
