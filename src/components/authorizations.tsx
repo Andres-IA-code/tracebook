@@ -52,7 +52,8 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
   };
   const patch = (id: string, p: Partial<Authorization>, msg: string) => { onChange(items.map(i => i.id === id ? { ...i, ...p } : i)); notify(msg); };
   const [pendingRemove, setPendingRemove] = useState<Authorization | null>(null);
-  const remove = (a: Authorization) => setPendingRemove(a);
+  const [confirmSigned, setConfirmSigned] = useState(false);
+  const remove = (a: Authorization) => { setConfirmSigned(false); setPendingRemove(a); };
   const applyRemove = () => {
     if (!pendingRemove) return;
     onChange(items.filter(i => i.id !== pendingRemove.id)); setSelected(null);
