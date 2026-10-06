@@ -358,6 +358,9 @@ function buildReportLatex(project: Project, list: Finding[], settings: SettingsS
   const text = color(settings.latexTextColor, "141414");
   const secondary = color(settings.latexSecondaryColor, "757575");
   const contacts = [settings.teamPhone, settings.teamWebsite, settings.teamAddress].filter(Boolean).map(t);
+  const findingsBySeverity = SEV_ORDER
+    .map(severity => ({ severity, findings: list.filter(f => f.severity === severity) }))
+    .filter(group => group.findings.length > 0);
   const logoMatch = settings.latexLogo.match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=]+)$/);
   const logoExtension = logoMatch?.[1] === "jpeg" ? "jpg" : "png";
   const embeddedLogo = logoMatch ? `\\directlua{
@@ -379,59 +382,107 @@ local f=assert(io.open("team-logo.${logoExtension}","wb")) f:write(d) f:close()
 \\usepackage[T1]{fontenc}
 \\usepackage[spanish]{babel}
 \\usepackage[margin=2.5cm]{geometry}
-\\usepackage{xcolor,booktabs,tikz,fancyhdr,titlesec,graphicx}
+\\usepackage{xcolor,booktabs,tikz,fancyhdr,titlesec,graphicx,tabularx,array,needspace,hyperref}
 \\definecolor{vorange}{HTML}{${primary}}
 \\definecolor{vdark}{HTML}{${text}}
 \\definecolor{vgray}{HTML}{${secondary}}
-\\titleformat{\\section}{\\Large\\bfseries\\color{vdark}}{}{0pt}{}[\\color{vorange}\\titlerule]
+\\hypersetup{colorlinks=true,linkcolor=vdark,urlcolor=vorange,pdfauthor={${org}},pdftitle={Informe de prueba de penetración — ${t(project.name)}}}
+\\setcounter{tocdepth}{2}
+\\setlength{\\parindent}{0pt}
+\\setlength{\\parskip}{0.55em}
+\\renewcommand{\\arraystretch}{1.25}
+\\titleformat{\\section}{\\Large\\bfseries\\color{vdark}}{\\thesection}{0.65em}{}[\\color{vorange}\\titlerule]
+\\titleformat{\\subsection}{\\large\\bfseries\\color{vdark}}{\\thesubsection}{0.65em}{}
+\\titlespacing*{\\section}{0pt}{2.2em}{1em}
+\\titlespacing*{\\subsection}{0pt}{1.5em}{0.5em}
 \\pagestyle{fancy}\\fancyhf{}
+\\lhead{\\footnotesize\\color{vgray} ${t(project.name)}}
+\\rhead{\\footnotesize\\color{vgray} Informe de prueba de penetración}
 \\lfoot{\\footnotesize\\color{vgray} ${org} \\textperiodcentered{} Documento confidencial}
-\\rfoot{\\footnotesize\\color{vgray} \\thepage}
-\\renewcommand{\\headrulewidth}{0pt}
+\\rfoot{\\footnotesize\\color{vgray} Página \\thepage}
+\\renewcommand{\\headrulewidth}{0.4pt}
+\\renewcommand{\\headrule}{\\hbox to\\headwidth{\\color{vorange}\\leaders\\hrule height \\headrulewidth\\hfill}}
+
+\\newcommand{\\metarow}[2]{\\textcolor{vgray}{#1} & #2 \\\\[0.35em]}
+\\newcommand{\\findingmeta}[2]{\\textcolor{vgray}{\\textbf{#1}} & #2 \\\\}
 
 ${embeddedLogo}\\begin{document}
+
+% Portada
+\\thispagestyle{empty}
 \\noindent${logo}\\hspace{0.4cm}%
-\\begin{minipage}[c]{0.8\\textwidth}
-{\\Large\\bfseries ${org}}\\\\
-{\\small\\color{vgray} Informe de prueba de penetración${issuer ? ` \\textperiodcentered{} ${issuer}` : ""}${contacts.length ? `\\\\${contacts.join(" \\textperiodcentered{} ")}` : ""}}
+\\begin{minipage}[c]{0.78\\textwidth}
+{\\Large\\bfseries ${org}}\\\\[0.2em]
+{\\small\\color{vgray}${contacts.length ? contacts.join(" \\textperiodcentered{} ") : "Gestión e informes de pentest"}}
 \\end{minipage}
 
-\\vspace{1cm}
+\\vfill
+{\\color{vorange}\\rule{\\textwidth}{2pt}}\\par
+\\vspace{0.8cm}
 {\\Huge\\bfseries Informe de prueba de penetración}\\par
-{\\color{vorange}\\rule{\\textwidth}{2pt}}
+\\vspace{0.35cm}
+{\\LARGE\\color{vgray}${t(project.name)}}\\par
+\\vspace{1.2cm}
+\\begin{tabularx}{\\textwidth}{@{}>{\\raggedright\\arraybackslash}p{4cm}X@{}}
+\\metarow{Cliente}{\\textbf{${t(project.client)}}}
+\\metarow{Tipo de evaluación}{${t(project.type)}}
+\\metarow{Período}{${t(project.start)} --- ${t(project.end)}}
+\\metarow{Fecha de emisión}{${date}}
+${issuer ? `\\metarow{Responsable}{${issuer.replace(/^Emitido por /, "")}}` : ""}
+\\end{tabularx}
+\\vfill
+{\\small\\bfseries\\color{vorange} DOCUMENTO CONFIDENCIAL}\\par
+{\\footnotesize\\color{vgray}ID del proyecto: ${t(project.id)}}
+\\clearpage
 
-\\section*{Identificación del proyecto}
-\\begin{tabular}{@{}ll@{}}
-{\\color{vgray}Proyecto} & \\textbf{${t(project.name)}} \\\\
-{\\color{vgray}ID de proyecto} & \\texttt{${t(project.id)}} \\\\
-{\\color{vgray}Cliente} & ${t(project.client)} \\\\
-{\\color{vgray}Tipo de evaluación} & ${t(project.type)} \\\\
-{\\color{vgray}Estado} & ${t(project.status)} \\\\
-{\\color{vgray}Período de ejecución} & ${t(project.start)} --- ${t(project.end)} \\\\
-{\\color{vgray}Fecha de emisión} & ${date} \\\\
-\\end{tabular}
+% Índice
+\\thispagestyle{plain}
+\\tableofcontents
+\\clearpage
 
-\\section*{Resumen ejecutivo}
-Se identificaron ${list.length} hallazgos durante la evaluación.
+\\section{Resumen ejecutivo}
+Durante la evaluación se identificaron \\textbf{${list.length} hallazgos}. La siguiente tabla presenta su distribución por severidad para facilitar la priorización.
 
 \\begin{center}
-\\begin{tabular}{lr}
+\\begin{tabular}{@{}lr@{}}
 \\toprule
 \\textbf{Severidad} & \\textbf{Cantidad} \\\\
 \\midrule
-${counts.map(([s, n]) => `${t(s)} & ${n} \\\\`).join("\n")}
+${counts.length ? counts.map(([s, n]) => `${t(s)} & ${n} \\\\`).join("\n") : `Sin hallazgos & 0 \\\\`}
 \\bottomrule
 \\end{tabular}
 \\end{center}
 
-\\section*{Detalle de hallazgos}
-${list.map((f, i) => `\\subsection*{${i + 1}. ${t(f.title)}}
-\\textbf{Severidad:} ${t(f.severity)} \\quad \\textbf{Estado:} ${t(f.status)}
+\\section{Identificación del proyecto}
+\\begin{tabularx}{\\textwidth}{@{}>{\\raggedright\\arraybackslash}p{4.2cm}X@{}}
+\\metarow{Proyecto}{\\textbf{${t(project.name)}}}
+\\metarow{ID de proyecto}{\\texttt{${t(project.id)}}}
+\\metarow{Cliente}{${t(project.client)}}
+\\metarow{Tipo de evaluación}{${t(project.type)}}
+\\metarow{Estado}{${t(project.status)}}
+\\metarow{Período de ejecución}{${t(project.start)} --- ${t(project.end)}}
+\\metarow{Fecha de emisión}{${date}}
+\\end{tabularx}
 
+\\section{Detalle de hallazgos}
+${findingsBySeverity.length ? findingsBySeverity.map(group => `\\subsection{Severidad ${t(group.severity)}}
+${group.findings.map((f, i) => `\\Needspace{8\\baselineskip}
+\\subsubsection*{${i + 1}. ${t(f.title)}}
+\\addcontentsline{toc}{subsubsection}{${t(f.title)}}
+{\\color{vorange}\\rule{\\textwidth}{0.8pt}}
+\\begin{tabularx}{\\textwidth}{@{}p{2.6cm}X@{}}
+\\findingmeta{Severidad}{${t(f.severity)}}
+\\findingmeta{Estado}{${t(f.status)}}
+\\end{tabularx}
+
+\\textbf{Descripción}\\par
 ${multi(f.description || "Sin descripción")}
-`).join("\n")}
+
+\\vspace{1em}
+`).join("\n")}`).join("\n") : "No se registraron hallazgos para este proyecto."}
+
 \\vfill
-{\\footnotesize\\color{vgray} ${org}${contacts.length ? ` \\textperiodcentered{} ${contacts.join(" \\textperiodcentered{} ")}` : ""} \\textperiodcentered{} ${date} \\textperiodcentered{} Documento confidencial}
+{\\footnotesize\\color{vgray}Informe generado con ${BRAND.name}${contacts.length ? ` \\textperiodcentered{} ${contacts.join(" \\textperiodcentered{} ")}` : ""}.}
 
 \\end{document}
 `;
@@ -463,18 +514,17 @@ function buildLatexPreviewHtml(project: Project, list: Finding[], settings: Sett
   const date = new Date().toLocaleDateString("es-AR");
   const contacts = [settings.teamPhone, settings.teamWebsite, settings.teamAddress].filter(Boolean).map(esc).join(" · ");
   const counts = SEV_ORDER.map(s => [s, list.filter(f => f.severity === s).length] as const).filter(([, n]) => n);
+  const findingsBySeverity = SEV_ORDER.map(severity => ({ severity, findings: list.filter(f => f.severity === severity) })).filter(group => group.findings.length);
   const logo = /^data:image\/(png|jpeg);base64,/.test(settings.latexLogo)
     ? `<img src="${settings.latexLogo}" alt="" style="width:42px;height:42px;object-fit:contain">`
     : `<svg width="42" height="42" viewBox="0 0 44 44"><rect width="44" height="44" fill="${tx}"/><path d="M22 9 35 33H9Z" fill="none" stroke="${p}" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="${p}"/></svg>`;
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>body{margin:0;background:#8a8a8a;padding:24px;font-family:"Latin Modern Roman","Computer Modern",Georgia,serif}.page{background:#fff;color:${tx};max-width:640px;margin:0 auto;padding:48px 56px;box-shadow:0 4px 20px rgba(0,0,0,.3);min-height:800px;display:flex;flex-direction:column}.hd{display:flex;justify-content:space-between;font-size:10px;color:${sc};border-bottom:.6px solid ${p};padding-bottom:4px;margin-bottom:28px}.brand{display:flex;gap:12px;align-items:center}.brand b{font-size:18px}.brand small{display:block;color:${sc};font-size:11px}h1{font-size:22px;margin:22px 0 4px}.rule{height:1.5px;background:${p};margin-bottom:18px}h2{color:${p};font-size:15px;margin:20px 0 8px}h3{font-size:13px;margin:12px 0 2px}table{border-collapse:collapse;font-size:12px}td,th{padding:3px 14px 3px 0;text-align:left}th{border-bottom:1px solid ${tx}}.k{color:${sc}}p,pre{font-size:12px;white-space:pre-wrap;font-family:inherit;margin:4px 0}.ft{margin-top:auto;padding-top:28px;font-size:10px;color:${sc};text-align:center;border-top:.6px solid ${p}}</style></head><body><div class="page">
-<div class="hd"><span>${org}${contacts ? ` · ${contacts}` : ""}</span><span>${esc(project.name)}</span></div>
-<div class="brand">${logo}<div><b>${org}</b><small>Informe de prueba de penetración${settings.userName ? ` · Emitido por ${esc(settings.userName)}` : ""}</small></div></div>
-<h1>Informe de prueba de penetración</h1><div class="rule"></div>
-<h2>Identificación del proyecto</h2><table><tr><td class="k">Proyecto</td><td><b>${esc(project.name)}</b></td></tr><tr><td class="k">Cliente</td><td>${esc(project.client)}</td></tr><tr><td class="k">Tipo</td><td>${esc(project.type)}</td></tr><tr><td class="k">Período</td><td>${esc(project.start)} — ${esc(project.end)}</td></tr><tr><td class="k">Emisión</td><td>${date}</td></tr></table>
-<h2>Resumen ejecutivo</h2><p>Se identificaron ${list.length} hallazgos.</p><table><tr><th>Severidad</th><th>Cantidad</th></tr>${counts.map(([s, n]) => `<tr><td>${s}</td><td>${n}</td></tr>`).join("")}</table>
-<h2>Detalle de hallazgos</h2>${list.map((f, i) => `<h3>${i + 1}. ${esc(f.title)}</h3><p><span class="k">Severidad:</span> ${esc(f.severity)} · <span class="k">Estado:</span> ${esc(f.status)}</p><pre>${esc(f.description || "Sin descripción")}</pre>`).join("")}
-<div class="ft">${org}${contacts ? ` · ${contacts}` : ""} · Documento confidencial</div>
-</div></body></html>`;
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>body{margin:0;background:#8a8a8a;padding:24px;font-family:"Latin Modern Roman","Computer Modern",Georgia,serif}.page{background:#fff;color:${tx};max-width:640px;margin:0 auto 20px;padding:48px 56px;box-shadow:0 4px 20px rgba(0,0,0,.3);min-height:800px;box-sizing:border-box;display:flex;flex-direction:column}.cover{min-height:800px}.brand{display:flex;gap:12px;align-items:center}.brand b{font-size:18px}.brand small{display:block;color:${sc};font-size:11px}.cover-title{margin:auto 0}.cover-title h1{font-size:30px;line-height:1.15;margin:12px 0 6px}.project-name{font-size:19px;color:${sc}}.rule{height:2px;background:${p}}.conf{margin-top:auto;color:${p};font-size:11px;font-weight:bold}.hd{display:flex;justify-content:space-between;font-size:10px;color:${sc};border-bottom:.6px solid ${p};padding-bottom:4px;margin-bottom:24px}h1{font-size:22px;margin:0 0 12px}h2{font-size:16px;margin:22px 0 8px;border-bottom:1.5px solid ${p};padding-bottom:4px}h3{font-size:14px;margin:18px 0 6px}h4{font-size:13px;margin:14px 0 3px}table{border-collapse:collapse;font-size:12px;width:100%}td,th{padding:4px 14px 4px 0;text-align:left}th{border-bottom:1px solid ${tx}}.k{color:${sc};width:34%}.toc{font-size:12px;line-height:2}.toc span{float:right}.finding{border-top:1px solid ${p};margin-top:8px;padding-top:4px}.meta{display:flex;gap:20px;font-size:11px}.meta b{color:${sc}}p,pre{font-size:12px;white-space:pre-wrap;font-family:inherit;margin:5px 0;line-height:1.45}.ft{margin-top:auto;padding-top:28px;font-size:10px;color:${sc};text-align:center;border-top:.6px solid ${p}}</style></head><body>
+<div class="page cover"><div class="brand">${logo}<div><b>${org}</b><small>${contacts || "Gestión e informes de pentest"}</small></div></div><div class="cover-title"><div class="rule"></div><h1>Informe de prueba de penetración</h1><div class="project-name">${esc(project.name)}</div><table style="margin-top:28px"><tr><td class="k">Cliente</td><td><b>${esc(project.client)}</b></td></tr><tr><td class="k">Tipo de evaluación</td><td>${esc(project.type)}</td></tr><tr><td class="k">Período</td><td>${esc(project.start)} — ${esc(project.end)}</td></tr><tr><td class="k">Fecha de emisión</td><td>${date}</td></tr></table></div><div class="conf">DOCUMENTO CONFIDENCIAL</div></div>
+<div class="page"><div class="hd"><span>${org}</span><span>${esc(project.name)}</span></div><h1>Índice</h1><div class="toc">1. Resumen ejecutivo <span>3</span><br>2. Identificación del proyecto <span>3</span><br>3. Detalle de hallazgos <span>4</span></div><div class="ft">${org} · Documento confidencial</div></div>
+<div class="page"><div class="hd"><span>${esc(project.name)}</span><span>Informe de prueba de penetración</span></div><h2>1. Resumen ejecutivo</h2><p>Durante la evaluación se identificaron <b>${list.length} hallazgos</b>. La siguiente tabla presenta su distribución por severidad.</p><table><tr><th>Severidad</th><th>Cantidad</th></tr>${counts.length ? counts.map(([s, n]) => `<tr><td>${s}</td><td>${n}</td></tr>`).join("") : "<tr><td>Sin hallazgos</td><td>0</td></tr>"}</table>
+<h2>2. Identificación del proyecto</h2><table><tr><td class="k">Proyecto</td><td><b>${esc(project.name)}</b></td></tr><tr><td class="k">ID de proyecto</td><td>${esc(project.id)}</td></tr><tr><td class="k">Cliente</td><td>${esc(project.client)}</td></tr><tr><td class="k">Tipo</td><td>${esc(project.type)}</td></tr><tr><td class="k">Estado</td><td>${esc(project.status)}</td></tr><tr><td class="k">Período</td><td>${esc(project.start)} — ${esc(project.end)}</td></tr><tr><td class="k">Emisión</td><td>${date}</td></tr></table>
+<h2>3. Detalle de hallazgos</h2>${findingsBySeverity.length ? findingsBySeverity.map(group => `<h3>3.${SEV_ORDER.indexOf(group.severity) + 1}. Severidad ${esc(group.severity)}</h3>${group.findings.map((f, i) => `<div class="finding"><h4>${i + 1}. ${esc(f.title)}</h4><div class="meta"><span><b>Severidad:</b> ${esc(f.severity)}</span><span><b>Estado:</b> ${esc(f.status)}</span></div><p><b>Descripción</b></p><pre>${esc(f.description || "Sin descripción")}</pre></div>`).join("")}`).join("") : "<p>No se registraron hallazgos para este proyecto.</p>"}<div class="ft">${org}${contacts ? ` · ${contacts}` : ""} · Documento confidencial</div></div>
+</body></html>`;
 }
 
 function Reports({ projects, findings, settings }: { projects: Project[]; findings: Finding[]; settings: SettingsState }) {
