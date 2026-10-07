@@ -94,7 +94,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version.outputs.tag }}
-          name: La Papa ${{ needs.version.outputs.tag }}
+          name: Tracebook ${{ needs.version.outputs.tag }}
           target_commitish: ${{ github.sha }}
           draft: true
           generate_release_notes: true
