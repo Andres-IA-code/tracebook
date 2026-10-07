@@ -116,7 +116,6 @@ function AuthDetail({ a, onEdit, onDelete, onSend, onSign, onReject }: { a: Auth
     {a.notes ? <div><div className="field-title">Condiciones adicionales</div><pre className="text-box auth-pre">{a.notes}</pre></div> : null}
     <ol className="auth-timeline">
       <li className="done">Creada · {fmt(a.createdAt)}</li>
-      <li className={a.sentAt ? "done" : ""}>Enviada al cliente · {fmt(a.sentAt)}</li>
       <li className={a.signedAt ? "done" : ""}>Firmada{a.signedBy ? ` por ${a.signedBy}` : ""} · {fmt(a.signedAt)}</li>
       {a.reason ? <li className="bad">{a.status}: {a.reason || "sin motivo"}</li> : null}
     </ol>
