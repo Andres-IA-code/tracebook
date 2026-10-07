@@ -1,11 +1,11 @@
 {
-  "name": "lapapa",
+  "name": "tracebook",
   "homepage": "https://github.com/Andres-IA-code/la-papa",
   "repository": {
     "type": "git",
     "url": "https://github.com/Andres-IA-code/la-papa.git"
   },
-  "desktopName": "lapapa.desktop",
+  "desktopName": "tracebook.desktop",
   "private": true,
   "main": "electron/main.cjs",
   "sideEffects": false,
