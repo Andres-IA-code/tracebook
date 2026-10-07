@@ -122,7 +122,6 @@ function AuthDetail({ a, onEdit, onDelete, onSend, onSign, onReject }: { a: Auth
     </ol>
     <div className="auth-actions">
       {a.status === "Borrador" ? <Button onClick={onSend}><Send />Marcar como enviada</Button> : null}
-      <Button variant="outline" onClick={onMail}><Mail />Enviar al cliente</Button>
       {editable ? <Button onClick={onSign} variant={a.status === "Enviada" ? "default" : "outline"}><FileSignature />Registrar firma</Button> : null}
       {a.status === "Enviada" ? <Button variant="outline" onClick={onReject}><X />Rechazada</Button> : null}
       <Button variant="outline" onClick={() => downloadAuthPdf(a)}><FileDown />Descargar PDF</Button>
