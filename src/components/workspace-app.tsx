@@ -1,5 +1,5 @@
 import { BRAND } from "@/brand";
-import laPapaLogo from "@/assets/la-papa-logo.png.asset.json";
+import laPapaLogo from "@/assets/la-papa-logo.jpg";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
