@@ -1,5 +1,5 @@
 appId: pentest-reports-desktop
-productName: "La Papa"
+productName: "Tracebook"
 directories:
   output: release
   buildResources: public/icons
@@ -19,9 +19,9 @@ win:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  artifactName: "LaPapa-${version}-win-${arch}-setup.${ext}"
+  artifactName: "Tracebook-${version}-win-${arch}-setup.${ext}"
 portable:
-  artifactName: "LaPapa-${version}-win-${arch}-portable.${ext}"
+  artifactName: "Tracebook-${version}-win-${arch}-portable.${ext}"
 mac:
   icon: public/icons/icon-512.png
   category: public.app-category.developer-tools
@@ -32,6 +32,6 @@ linux:
   icon: public/icons/icon-512.png
   category: Development
   syncDesktopName: true
-  maintainer: "Andrés Consiglio (La Papa)"
+  maintainer: "Andrés Consiglio (Tracebook)"
   target: [AppImage, deb]
-artifactName: "LaPapa-${version}-${os}-${arch}.${ext}"
+artifactName: "Tracebook-${version}-${os}-${arch}.${ext}"
