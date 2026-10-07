@@ -1,5 +1,5 @@
 import { BRAND } from "@/brand";
-import laPapaLogo from "@/assets/la-papa-logo.jpg";
+import tracebookLogo from "@/assets/tracebook-logo.jpg";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
@@ -55,7 +55,7 @@ type ImportPayload = { data: DataState; settings: Partial<SettingsState> | null 
 function parseBackup(text: string): ImportPayload {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch { throw new Error("El archivo no es un JSON válido."); }
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("El archivo no tiene el formato de un respaldo de La Papa.");
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("El archivo no tiene el formato de un respaldo de Tracebook.");
   const obj = raw as Record<string, unknown>;
   const keys = ["projects", "findings", "clients", "templates", "authorizations"];
   if (!keys.some(k => k in obj)) throw new Error("El archivo no contiene proyectos, hallazgos, clientes, plantillas ni autorizaciones.");
@@ -68,7 +68,7 @@ function mergeById<T extends { id: string }>(current: T[], incoming: T[]) { cons
 function exportBackup(data: DataState, settings: SettingsState) {
   const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: BRAND.name, version: BRAND.version }, null, 2);
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
-  const a = document.createElement("a"); a.href = url; a.download = `lapapa-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  const a = document.createElement("a"); a.href = url; a.download = `tracebook-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
