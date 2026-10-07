@@ -20,3 +20,5 @@
 - [x] Edit projects and change their status directly from the projects table
 - [x] Rename panel metric to "Informes entregados" and count delivered projects
 - [x] Add panel counters for projects in test, in review and delivered
+- [x] Use the uploaded Apollo binder photo as the bundled app logo (sidebar and mobile bar)
+
