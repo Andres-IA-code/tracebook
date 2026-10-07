@@ -384,7 +384,6 @@ const SEV_ORDER = ["Crítico", "Alto", "Medio", "Bajo", "Sin clasificar"];
 // Normaliza variantes (p. ej. "Crítica", "alta") para que ningún hallazgo quede fuera del informe.
 const sevOf = (f: { severity: string }) => { const v = (f.severity ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); if (v.startsWith("crit")) return "Crítico"; if (v.startsWith("alt")) return "Alto"; if (v.startsWith("med")) return "Medio"; if (v.startsWith("baj")) return "Bajo"; return "Sin clasificar"; };
 
-const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><rect width="44" height="44" rx="10" fill="#141414"/><path d="M22 9 35 33H9Z" fill="none" stroke="#ED7D27" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="#ED7D27"/></svg>`;
 
 function buildReportHtml(project: Project, list: Finding[], settings: SettingsState) {
   const esc = (s: string) => (s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
@@ -392,7 +391,7 @@ function buildReportHtml(project: Project, list: Finding[], settings: SettingsSt
   const date = new Date().toLocaleDateString("es-AR");
   const org = settings.organization || BRAND.name;
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe — ${esc(project.name)}</title><style>body{font-family:Georgia,serif;max-width:760px;margin:40px auto;color:#141414;line-height:1.5}h1{font-size:24px;border-bottom:3px solid #D9641E;padding-bottom:8px}h2{font-size:17px;margin-top:28px;color:#41423A}h3{font-size:15px;margin:18px 0 4px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:13px}th{background:#ECE2D2}.f{border-left:3px solid #D9641E;padding-left:12px;margin-bottom:16px}pre{white-space:pre-wrap;font-family:inherit}.report-head{display:flex;align-items:center;gap:14px;margin-bottom:6px}.report-head .brand-name{font-size:20px;font-weight:bold;letter-spacing:.5px}.report-head .brand-sub{font-size:12px;color:#757575}.id-table td{border:none;padding:3px 10px 3px 0;font-size:13px}.id-table td:first-child{color:#757575;white-space:nowrap}.foot{margin-top:36px;border-top:1px solid #ccc;padding-top:8px;font-size:11px;color:#757575}</style></head><body>
-<div class="report-head">${/^data:image\/(png|jpeg);base64,/.test(settings.latexLogo) ? `<img src="${settings.latexLogo}" alt="" style="width:44px;height:44px;object-fit:contain">` : LOGO_SVG}<div><div class="brand-name">${esc(org)}</div><div class="brand-sub">Informe de prueba de penetración${settings.userName ? ` · Emitido por ${esc(settings.userName)}${settings.role ? ` (${esc(settings.role)})` : ""}` : ""}${settings.email ? ` · ${esc(settings.email)}` : ""}</div></div></div>
+<div class="report-head">${/^data:image\/(png|jpeg);base64,/.test(settings.latexLogo) ? `<img src="${settings.latexLogo}" alt="" style="width:44px;height:44px;object-fit:contain">` : ""}<div><div class="brand-name">${esc(org)}</div><div class="brand-sub">Informe de prueba de penetración${settings.userName ? ` · Emitido por ${esc(settings.userName)}${settings.role ? ` (${esc(settings.role)})` : ""}` : ""}${settings.email ? ` · ${esc(settings.email)}` : ""}</div></div></div>
 <h1>Informe de prueba de penetración</h1>
 <h2>Identificación del proyecto</h2>
 <table class="id-table"><tr><td>Proyecto</td><td><b>${esc(project.name)}</b></td></tr><tr><td>ID de proyecto</td><td>${esc(project.id)}</td></tr><tr><td>Cliente</td><td>${esc(project.client)}</td></tr><tr><td>Tipo de evaluación</td><td>${esc(project.type)}</td></tr><tr><td>Estado</td><td>${esc(project.status)}</td></tr><tr><td>Período de ejecución</td><td>${esc(project.start)} — ${esc(project.end)}</td></tr><tr><td>Fecha de emisión</td><td>${date}</td></tr></table>
@@ -429,11 +428,7 @@ local f=assert(io.open("team-logo.${logoExtension}","wb")) f:write(d) f:close()
 ` : "";
   const logo = logoMatch
     ? `\\includegraphics[width=1.1cm,height=1.1cm,keepaspectratio]{team-logo.${logoExtension}}`
-    : `\\begin{tikzpicture}[baseline=-4pt]
-  \\fill[vdark] (0,0) rectangle (1.1,1.1);
-  \\draw[vorange,line width=1.4pt,line join=round] (0.55,0.88) -- (0.88,0.25) -- (0.22,0.25) -- cycle;
-  \\fill[vorange] (0.55,0.88) circle (0.08);
-\\end{tikzpicture}`;
+    : "";
   return `\\documentclass[11pt,a4paper]{article}
 \\usepackage[utf8]{inputenc}
 \\usepackage[T1]{fontenc}
@@ -467,7 +462,7 @@ ${embeddedLogo}\\begin{document}
 
 % Portada
 \\thispagestyle{empty}
-\\noindent${logo}\\hspace{0.4cm}%
+\\noindent${logo ? `${logo}\\hspace{0.4cm}%` : ""}
 \\begin{minipage}[c]{0.78\\textwidth}
 {\\Large\\bfseries ${org}}\\\\[0.2em]
 {\\small\\color{vgray}${contacts.length ? contacts.join(" \\textperiodcentered{} ") : "Gestión e informes de pentest"}}
@@ -574,7 +569,7 @@ function buildLatexPreviewHtml(project: Project, list: Finding[], settings: Sett
   const findingsBySeverity = SEV_ORDER.map(severity => ({ severity, findings: list.filter(f => sevOf(f) === severity) })).filter(group => group.findings.length);
   const logo = /^data:image\/(png|jpeg);base64,/.test(settings.latexLogo)
     ? `<img src="${settings.latexLogo}" alt="" style="width:42px;height:42px;object-fit:contain">`
-    : `<svg width="42" height="42" viewBox="0 0 44 44"><rect width="44" height="44" fill="${tx}"/><path d="M22 9 35 33H9Z" fill="none" stroke="${p}" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="9" r="3.4" fill="${p}"/></svg>`;
+    : "";
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>body{margin:0;background:#8a8a8a;padding:24px;font-family:"Latin Modern Roman","Computer Modern",Georgia,serif}.page{background:#fff;color:${tx};max-width:640px;margin:0 auto 20px;padding:48px 56px;box-shadow:0 4px 20px rgba(0,0,0,.3);min-height:800px;box-sizing:border-box;display:flex;flex-direction:column}.cover{min-height:800px}.brand{display:flex;gap:12px;align-items:center}.brand b{font-size:18px}.brand small{display:block;color:${sc};font-size:11px}.cover-title{margin:auto 0}.cover-title h1{font-size:30px;line-height:1.15;margin:12px 0 6px}.project-name{font-size:19px;color:${sc}}.rule{height:2px;background:${p}}.conf{margin-top:auto;color:${p};font-size:11px;font-weight:bold}.hd{display:flex;justify-content:space-between;font-size:10px;color:${sc};border-bottom:.6px solid ${p};padding-bottom:4px;margin-bottom:24px}h1{font-size:22px;margin:0 0 12px}h2{font-size:16px;margin:22px 0 8px;border-bottom:1.5px solid ${p};padding-bottom:4px}h3{font-size:14px;margin:18px 0 6px}h4{font-size:13px;margin:14px 0 3px}table{border-collapse:collapse;font-size:12px;width:100%}td,th{padding:4px 14px 4px 0;text-align:left}th{border-bottom:1px solid ${tx}}.k{color:${sc};width:34%}.toc{font-size:12px;line-height:2}.toc span{float:right}.finding{border-top:1px solid ${p};margin-top:8px;padding-top:4px}.meta{display:flex;gap:20px;font-size:11px}.meta b{color:${sc}}p,pre{font-size:12px;white-space:pre-wrap;font-family:inherit;margin:5px 0;line-height:1.45}.ft{margin-top:auto;padding-top:28px;font-size:10px;color:${sc};text-align:center;border-top:.6px solid ${p}}</style></head><body>
 <div class="page cover"><div class="brand">${logo}<div><b>${org}</b><small>${contacts || "Gestión e informes de pentest"}</small></div></div><div class="cover-title"><div class="rule"></div><h1>Informe de prueba de penetración</h1><div class="project-name">${esc(project.name)}</div><table style="margin-top:28px"><tr><td class="k">Cliente</td><td><b>${esc(project.client)}</b></td></tr><tr><td class="k">Tipo de evaluación</td><td>${esc(project.type)}</td></tr><tr><td class="k">Período</td><td>${esc(project.start)} — ${esc(project.end)}</td></tr><tr><td class="k">Fecha de emisión</td><td>${date}</td></tr></table></div><div class="conf">DOCUMENTO CONFIDENCIAL</div></div>
 <div class="page"><div class="hd"><span>${org}</span><span>${esc(project.name)}</span></div><h1>Índice</h1><div class="toc">1. Resumen ejecutivo <span>3</span><br>2. Identificación del proyecto <span>3</span><br>3. Detalle de hallazgos <span>4</span></div><div class="ft">${org} · Documento confidencial</div></div>
