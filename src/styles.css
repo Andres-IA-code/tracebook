@@ -116,6 +116,7 @@ h6,
 .brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px; font-size: 17px; font-weight: 600; }
 .brand-mark { width: 14px; height: 14px; background: var(--primary); transform: rotate(45deg); border-radius: 2px; display: inline-block; }
 .brand-mark.dark { background: var(--foreground); }
+.brand-logo { background: none; transform: none; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--border); }
 .org-switcher { display: flex; width: 100%; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); text-align: left; cursor: pointer; }
 .org-switcher > svg { width: 16px; color: var(--muted-foreground); margin-left: auto; }
 .org-avatar { width: 27px; height: 27px; border-radius: 6px; background: var(--muted); display: grid; place-items: center; font-size: 11px; font-weight: 600; }
