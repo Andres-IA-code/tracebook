@@ -1,6 +1,5 @@
-# La Papa — Gestión e informes de pentest
+# Tracebook — Gestión e informes de pentest
 
-En el Río de la Plata, *la papa* es lo esencial, la posta: lo que realmente tenés que saber. Eso es lo que entrega un buen informe de pentest.
 
 Aplicación de escritorio de código abierto para documentar pentest autorizados: proyectos, autorizaciones firmadas, hallazgos, biblioteca de plantillas, informes y auditoría.
 
@@ -20,15 +19,15 @@ Aplicación de escritorio de código abierto para documentar pentest autorizados
 ## Instalación
 Descarga el instalador desde *Releases*.
 
-- **Windows**: `LaPapa-x.y.z-win-x64-setup.exe` (instalador) o `LaPapa-x.y.z-win-x64-portable.exe` (versión portable). Al no estar firmado, SmartScreen mostrará "Windows protegió su PC": pulsa **Más información → Ejecutar de todas formas**.
-- **macOS**: `.dmg` para Intel (x64) o Apple Silicon (arm64). Gatekeeper lo bloqueará la primera vez: clic derecho sobre la app → **Abrir → Abrir**, o `xattr -dr com.apple.quarantine "/Applications/La Papa.app"`.
-- **Linux**: `.AppImage` (`chmod +x LaPapa-*.AppImage && ./LaPapa-*.AppImage`) o `.deb` (`sudo apt install ./LaPapa-*.deb`).
+- **Windows**: `Tracebook-x.y.z-win-x64-setup.exe` (instalador) o `Tracebook-x.y.z-win-x64-portable.exe` (versión portable). Al no estar firmado, SmartScreen mostrará "Windows protegió su PC": pulsa **Más información → Ejecutar de todas formas**.
+- **macOS**: `.dmg` para Intel (x64) o Apple Silicon (arm64). Gatekeeper lo bloqueará la primera vez: clic derecho sobre la app → **Abrir → Abrir**, o `xattr -dr com.apple.quarantine "/Applications/Tracebook.app"`.
+- **Linux**: `.AppImage` (`chmod +x Tracebook-*.AppImage && ./Tracebook-*.AppImage`) o `.deb` (`sudo apt install ./Tracebook-*.deb`).
 
 ### Verificar la huella SHA-256
 Las huellas oficiales de cada archivo se publican en el archivo `SHA256SUMS.txt` de cada *Release*: descargalo de la misma página que el instalador y compara su contenido con el resultado del comando:
-- Windows: `Get-FileHash .\LaPapa-*.exe -Algorithm SHA256`
-- macOS: `shasum -a 256 LaPapa-*.dmg`
-- Linux: `sha256sum LaPapa-*.AppImage`
+- Windows: `Get-FileHash .\Tracebook-*.exe -Algorithm SHA256`
+- macOS: `shasum -a 256 Tracebook-*.dmg`
+- Linux: `sha256sum Tracebook-*.AppImage`
 
 ## Compilar desde el código fuente
 Requiere Bun (o Node 20+).
@@ -67,4 +66,4 @@ AGPL-3.0 — puedes usar, estudiar, modificar y redistribuir el código, siempre
 ---
 
 ## English summary
-La Papa is an open-source, fully offline desktop app (Electron) to manage authorized penetration tests: projects, signed authorizations, findings, template library, reports (LaTeX/PDF/Word/HTML/JSON) and an audit log. No accounts, no telemetry, no network access — data stays on your machine. Installers are unsigned: on Windows use *More info → Run anyway*; on macOS right-click → *Open*. Build with `bun install && bun run dist:<win|mac|linux>`. Licensed under the GNU AGPL v3 (AGPL-3.0-or-later); commercial licenses available from the author. Use only for authorized testing.
+Tracebook is an open-source, fully offline desktop app (Electron) to manage authorized penetration tests: projects, signed authorizations, findings, template library, reports (LaTeX/PDF/Word/HTML/JSON) and an audit log. No accounts, no telemetry, no network access — data stays on your machine. Installers are unsigned: on Windows use *More info → Run anyway*; on macOS right-click → *Open*. Build with `bun install && bun run dist:<win|mac|linux>`. Licensed under the GNU AGPL v3 (AGPL-3.0-or-later); commercial licenses available from the author. Use only for authorized testing.

@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "La Papa — Gestión e informes de pentest",
-  "short_name": "La Papa",
+  "name": "Tracebook — Gestión e informes de pentest",
+  "short_name": "Tracebook",
   "description": "Espacio de trabajo para gestionar proyectos, hallazgos, clientes e informes de pentesting.",
   "start_url": "/",
   "scope": "/",

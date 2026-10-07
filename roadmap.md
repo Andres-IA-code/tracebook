@@ -1,10 +1,10 @@
 # Roadmap
 
-- [x] Build the La Papa design system and responsive application shell
+- [x] Build the Tracebook design system and responsive application shell
 - [x] Implement all seven internal workspace screens and navigation
 - [x] Implement client signature and remediation portal modes
 - [x] Add interactive filtering, selection, report controls, and feedback
-- [x] Add La Papa metadata and validate desktop/mobile rendering
+- [x] Add Tracebook metadata and validate desktop/mobile rendering
 
 - [x] Remove all sample records and reset dashboard counters
 - [x] Add working forms and JSON import for real user data
