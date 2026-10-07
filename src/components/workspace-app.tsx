@@ -1,5 +1,5 @@
 import { BRAND } from "@/brand";
-import tracebookLogo from "@/assets/tracebook-logo.jpg";
+import tracebookLogo from "@/assets/tracebook-logo.png";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
