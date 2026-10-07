@@ -1,7 +1,7 @@
-# Contribuir a La Papa
+# Contribuir a Tracebook
 
 ## Reportar errores y proponer mejoras
-- **Errores**: abre un *issue* describiendo qué hiciste, qué esperabas y qué ocurrió, junto con tu sistema operativo y la versión de La Papa. No incluyas datos reales de clientes.
+- **Errores**: abre un *issue* describiendo qué hiciste, qué esperabas y qué ocurrió, junto con tu sistema operativo y la versión de Tracebook. No incluyas datos reales de clientes.
 - **Mejoras**: abre un *issue* explicando la propuesta antes de empezar cambios grandes.
 - **Pull requests**: crea una rama desde `main`, mantén los cambios acotados, describe qué resuelven y enlaza el *issue* correspondiente.
 - Las vulnerabilidades de seguridad se informan según [SECURITY.md](SECURITY.md).

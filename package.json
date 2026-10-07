@@ -1,11 +1,11 @@
 {
-  "name": "lapapa",
+  "name": "tracebook",
   "homepage": "https://github.com/Andres-IA-code/la-papa",
   "repository": {
     "type": "git",
     "url": "https://github.com/Andres-IA-code/la-papa.git"
   },
-  "desktopName": "lapapa.desktop",
+  "desktopName": "tracebook.desktop",
   "private": true,
   "main": "electron/main.cjs",
   "sideEffects": false,
@@ -109,5 +109,5 @@
   "version": "0.1.0",
   "license": "AGPL-3.0-or-later",
   "description": "Gestión e informes de pentest, 100 % local",
-  "author": "Andrés Consiglio (La Papa)"
+  "author": "Andrés Consiglio (Tracebook)"
 }

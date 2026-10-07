@@ -1,5 +1,5 @@
 import { BRAND } from "@/brand";
-import laPapaLogo from "@/assets/la-papa-logo.jpg";
+import tracebookLogo from "@/assets/tracebook-logo.jpg";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
@@ -55,7 +55,7 @@ type ImportPayload = { data: DataState; settings: Partial<SettingsState> | null 
 function parseBackup(text: string): ImportPayload {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch { throw new Error("El archivo no es un JSON válido."); }
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("El archivo no tiene el formato de un respaldo de La Papa.");
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("El archivo no tiene el formato de un respaldo de Tracebook.");
   const obj = raw as Record<string, unknown>;
   const keys = ["projects", "findings", "clients", "templates", "authorizations"];
   if (!keys.some(k => k in obj)) throw new Error("El archivo no contiene proyectos, hallazgos, clientes, plantillas ni autorizaciones.");
@@ -68,7 +68,7 @@ function mergeById<T extends { id: string }>(current: T[], incoming: T[]) { cons
 function exportBackup(data: DataState, settings: SettingsState) {
   const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: BRAND.name, version: BRAND.version }, null, 2);
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
-  const a = document.createElement("a"); a.href = url; a.download = `lapapa-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  const a = document.createElement("a"); a.href = url; a.download = `tracebook-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
@@ -268,13 +268,13 @@ export function WorkspaceApp() {
   const statusCounts = PROJECT_STATUSES.map(status => data.projects.filter(project => project.status === status).length);
   return <div className="app-shell">
     <aside className={cn("sidebar", mobileNav && "sidebar-open")}>
-      <div className="brand"><img className="brand-mark brand-logo" src={laPapaLogo} alt="" />{BRAND.name}<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
+      <div className="brand"><img className="brand-mark brand-logo" src={tracebookLogo} alt="" />{BRAND.name}<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
       <button className="org-switcher" onClick={() => go("configuracion")}><span className="org-avatar">{initials(settings.organization || BRAND.name)}</span><span><b>{settings.organization || "Mi consultora"}</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
       <nav aria-label="Navegación principal">{navItems.map(([key,label,Icon]) => <button key={key} className={cn("nav-item", view === key && "active")} onClick={() => go(key)}><Icon /><span>{label}</span></button>)}</nav>
       <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.desktopBridge?.quit()}><LogOut /><span>Salir</span></button> : null}<div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
     </aside>
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
-    <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><img className="brand-mark brand-logo" src={laPapaLogo} alt="" />{BRAND.name}</div></div>
+    <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><img className="brand-mark brand-logo" src={tracebookLogo} alt="" />{BRAND.name}</div></div>
       <main className="page">
         {view === "panel" && <Dashboard data={data} counts={[activeProjects,openFindings,critical,deliveredReports]} statusCounts={statusCounts} go={go} create={() => setCreateKind("project")} exportData={doExport} importData={startImport} />}
         {view === "proyectos" && <Projects projects={data.projects} create={() => setCreateKind("project")} onEdit={setEditingProject} onDelete={deleteProject} />}
