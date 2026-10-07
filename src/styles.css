@@ -510,7 +510,7 @@ input, textarea, select { text-transform: none; font-size: 13px; }
 .page-head { border-bottom: 3px solid var(--foreground); padding-bottom: 18px; }
 .sidebar { border-right: 2px solid var(--foreground); }
 .brand-mark { background: var(--primary); transform: none; width: 18px; height: 18px; }
-.brand-logo { background: none; transform: none; object-fit: cover; border-radius: 8px; box-shadow: 0 0 0 1px var(--border); width: 26px; height: 26px; }
+.brand-logo { background: none; transform: none; object-fit: cover; border-radius: 8px; box-shadow: 0 0 0 1px var(--border); width: 30px; height: 30px; }
 .nav-item { border-bottom: 1px solid color-mix(in oklab, var(--foreground) 18%, transparent); }
 .nav-item.active { background: var(--foreground); color: var(--background); }
 .nav-item:hover:not(.active) { background: var(--primary); color: var(--primary-foreground); }
