@@ -106,7 +106,7 @@
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5"
   },
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "AGPL-3.0-or-later",
   "description": "Gestión e informes de pentest, 100 % local",
   "author": "Andrés Consiglio (Tracebook)"
