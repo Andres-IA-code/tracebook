@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { AlertTriangle, CalendarClock, Check, FileDown, FileSignature, Mail, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, FileDown, FileSignature, Pencil, Plus, Printer, Search, Send, ShieldCheck, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -81,29 +81,6 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
         <section className="surface">{current ? <AuthDetail a={current}
           onEdit={() => setEditing(current)} onDelete={() => remove(current)}
           onSend={() => patch(current.id, { status: "Enviada", sentAt: new Date().toISOString() }, "Marcada como enviada al cliente")}
-          onMail={() => {
-            if (!current.signerEmail) { window.alert("Esta autorización no tiene correo del firmante. Editala para agregarlo."); return; }
-            const subject = `Autorización de pruebas — ${current.projectName}`;
-            const body = [
-              `Estimado/a ${current.signer}:`,
-              "",
-              `Le enviamos la autorización de pruebas de penetración correspondiente al proyecto "${current.projectName}" (${current.client}).`,
-              "",
-              `Ventana de pruebas: ${fmt(current.windowStart)} al ${fmt(current.windowEnd)}${current.hours ? ` — ${current.hours}` : ""}`,
-              `Tipo de prueba: ${current.testTypes.join(", ") || "—"}`,
-              "",
-              "Alcance autorizado:",
-              current.scope,
-              "",
-              `Exclusiones: ${current.exclusions || "Sin exclusiones declaradas"}`,
-              current.notes ? `\nCondiciones adicionales:\n${current.notes}` : "",
-              "",
-              "Por favor, revise el documento y confirme su conformidad para registrar la firma.",
-            ].filter(Boolean).join("\n");
-            window.location.href = `mailto:${current.signerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            if (current.status === "Borrador") patch(current.id, { status: "Enviada", sentAt: new Date().toISOString() }, "Autorización enviada al cliente");
-            else notify("Se abrió el correo para el cliente");
-          }}
           onSign={() => setSigning(current)}
           onReject={() => { const reason = window.prompt("Motivo del rechazo"); if (reason !== null) patch(current.id, { status: "Rechazada", reason }, "Autorización rechazada"); }}
         /> : <div className="empty-state"><span><ShieldCheck /></span><h3>Selecciona una autorización</h3><p>El documento y sus acciones se mostrarán aquí.</p></div>}</section>
@@ -123,7 +100,7 @@ export function Authorizations({ items = [], projects = [], onChange, goProjects
   </>;
 }
 
-function AuthDetail({ a, onEdit, onDelete, onSend, onMail, onSign, onReject }: { a: Authorization; onEdit: () => void; onDelete: () => void; onSend: () => void; onMail: () => void; onSign: () => void; onReject: () => void }) {
+function AuthDetail({ a, onEdit, onDelete, onSend, onSign, onReject }: { a: Authorization; onEdit: () => void; onDelete: () => void; onSend: () => void; onSign: () => void; onReject: () => void }) {
   const s = effectiveStatus(a);
   const editable = a.status === "Borrador" || a.status === "Enviada";
   return <div className="detail-body auth-detail">
