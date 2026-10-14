@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 — 2026-10-14
+- Configuración → Acerca de: se quitó la línea que mostraba el enlace al repositorio de código fuente.
+- Publicación: los borradores de Release ya no se marcan como «última versión», así no reemplazan a la versión estable publicada.
+
 ## 0.3.0 — 2026-10-07
 - Autorizaciones: se quitó el botón «Enviar al cliente» y el registro «Enviada al cliente» del historial; sigue disponible «Marcar como enviada».
 - Informes: se eliminó el logo antiguo que aparecía cuando no se cargó un logo personalizado; ahora solo se muestra el nombre de la organización.
