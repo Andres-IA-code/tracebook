@@ -97,6 +97,7 @@ jobs:
           name: Tracebook ${{ needs.version.outputs.tag }}
           target_commitish: ${{ github.sha }}
           draft: true
+          make_latest: "false"
           generate_release_notes: true
           files: dist/*
           body: |
