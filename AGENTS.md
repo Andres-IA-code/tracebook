@@ -22,3 +22,4 @@
 - Keep LaTeX report branding in the persisted workspace settings and embed custom logos into the generated source so exports remain portable.
 - Keep every package URL in `bun.lock` on the public registry https://registry.npmjs.org/ (fix with `node scripts/fix-lockfile.mjs`), so anyone can clone and run `bun install`.
 - Never rename the localStorage keys `vertice-workspace-data`, `vertice-settings`, `vertice-audit`; they are kept on purpose for compatibility with data already saved.
+- Encrypted backups use only Web Crypto (src/lib/backup-crypto.ts, versioned file format); never log or persist passwords, so backups stay safe and offline.
