@@ -11,6 +11,7 @@ Aplicación de escritorio de código abierto para documentar pentest autorizados
 - Hallazgos por severidad y biblioteca de plantillas reutilizables.
 - Informes en LaTeX (personalizable con logotipo, colores y contacto), PDF, Word, HTML y JSON.
 - Registro de auditoría de importaciones, exportaciones y borrados.
+- Respaldos cifrados con contraseña (AES-256-GCM), con generador de frases seguras e indicador de fortaleza.
 
 ## Privacidad
 - Datos 100 % locales en tu equipo.
@@ -56,8 +57,29 @@ Para mantenedores:
 - Los informes exportados no se cifran.
 - La app no se conecta a internet.
 
+Formato del respaldo cifrado
+El respaldo cifrado es un JSON con los parámetros en claro (`kdf`: PBKDF2-SHA256, iteraciones y salt de 16 bytes; `cipher`: AES-GCM con IV de 12 bytes) y el contenido cifrado en `data` (base64, con la etiqueta GCM de 16 bytes al final). Los datos adicionales autenticados (AAD) son `tracebook-encrypted-backup:v1` y la contraseña se normaliza en Unicode NFC.
+
+Para descifrarlo sin la app (requiere `pip install cryptography`):
+
+```python
+import base64, getpass, hashlib, json, sys, unicodedata
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+f = json.load(open(sys.argv[1], encoding="utf-8"))
+pw = unicodedata.normalize("NFC", getpass.getpass("Contraseña: ")).encode()
+key = hashlib.pbkdf2_hmac("sha256", pw, base64.b64decode(f["kdf"]["salt"]), f["kdf"]["iterations"], 32)
+data = AESGCM(key).decrypt(base64.b64decode(f["cipher"]["iv"]), base64.b64decode(f["data"]), b"tracebook-encrypted-backup:v1")
+sys.stdout.write(data.decode("utf-8"))
+```
+Uso: `python descifrar.py tracebook-respaldo-cifrado-AAAA-MM-DD.json > respaldo.json`
+
 ## Copias de seguridad
-En **Configuración → Exportar datos** se genera un archivo JSON con todo tu espacio de trabajo. Guárdalo en un lugar seguro; puedes restaurarlo con la opción de importación (combinar o reemplazar).
+En Configuración → Exportar datos (o desde el Panel) puedes generar un respaldo de todo tu espacio de trabajo:
+* Cifrado con contraseña (recomendado): genera `tracebook-respaldo-cifrado-AAAA-MM-DD.json`. Usa el botón "Generar contraseña" para obtener una frase de 5 palabras y guárdala en tu gestor de contraseñas. Si la pierdes, el respaldo no se puede recuperar.
+* Sin cifrar: genera `tracebook-respaldo-AAAA-MM-DD.json`, legible por cualquiera que tenga el archivo.
+
+Para restaurarlo usa Importar datos: si el archivo está cifrado, la app pedirá la contraseña. Luego eliges combinar con tus datos actuales o reemplazarlos. Los respaldos sin cifrar de versiones anteriores se siguen importando igual.
 
 ## Aviso legal
 Esta herramienta sirve para documentar pruebas de seguridad **autorizadas** por escrito. Su uso contra sistemas sin permiso es responsabilidad exclusiva del usuario.
