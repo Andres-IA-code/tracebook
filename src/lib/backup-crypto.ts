@@ -63,15 +63,15 @@ export async function decryptBackup(fileText: string, password: string): Promise
   let obj: Record<string, unknown>;
   try { obj = JSON.parse(fileText) as Record<string, unknown>; } catch { throw new Error(ERR_INVALID); }
   if (!isEncryptedBackup(obj)) throw new Error(ERR_INVALID);
-  if (obj.version !== 1) throw new Error(ERR_VERSION);
-  const kdf = obj.kdf as Record<string, unknown> | undefined;
-  const cipher = obj.cipher as Record<string, unknown> | undefined;
-  if (!kdf || kdf.name !== "PBKDF2" || kdf.hash !== "SHA-256" || !cipher || cipher.name !== "AES-GCM") throw new Error(ERR_INVALID);
-  const iterations = kdf.iterations;
+  if (obj["version"] !== 1) throw new Error(ERR_VERSION);
+  const kdf = obj["kdf"] as Record<string, unknown> | undefined;
+  const cipher = obj["cipher"] as Record<string, unknown> | undefined;
+  if (!kdf || kdf["name"] !== "PBKDF2" || kdf["hash"] !== "SHA-256" || !cipher || cipher["name"] !== "AES-GCM") throw new Error(ERR_INVALID);
+  const iterations = kdf["iterations"];
   if (typeof iterations !== "number" || !Number.isInteger(iterations) || iterations < MIN_ITER || iterations > MAX_ITER) throw new Error(ERR_INVALID);
-  const salt = fromBase64(kdf.salt);
-  const iv = fromBase64(cipher.iv);
-  const data = fromBase64(obj.data);
+  const salt = fromBase64(kdf["salt"]);
+  const iv = fromBase64(cipher["iv"]);
+  const data = fromBase64(obj["data"]);
   if (salt.length !== 16 || iv.length !== 12 || data.length < 16) throw new Error(ERR_INVALID);
   try {
     const key = await deriveKey(password, salt, iterations);
