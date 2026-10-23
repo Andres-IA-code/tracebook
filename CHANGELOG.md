@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.0 — 2026-10-23
+- Respaldos cifrados con contraseña (AES-256-GCM + PBKDF2), generador de frases seguras, indicador de fortaleza y sección de seguridad de los datos en el README.
+
 ## 0.3.1 — 2026-10-14
 - Configuración → Acerca de: se quitó la línea que mostraba el enlace al repositorio de código fuente.
 - Panel: las tarjetas «En prueba», «En revisión» y «Entregado» muestran la cantidad de proyectos en cada estado y abren Proyectos al hacer clic; «Informes entregados» cuenta los proyectos entregados. (Estos ajustes venían de la 0.2.0 y no estaban anotados en el registro de versiones.)

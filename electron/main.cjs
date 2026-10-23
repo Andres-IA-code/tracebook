@@ -49,8 +49,8 @@ function createWindow() {
 ipcMain.on("app-quit", () => app.quit());
 
 app.whenReady().then(() => {
-  session.defaultSession.setPermissionRequestHandler((_wc, _perm, callback) => callback(false));
-  session.defaultSession.setPermissionCheckHandler(() => false);
+  session.defaultSession.setPermissionRequestHandler((_wc, perm, callback) => callback(perm === "clipboard-sanitized-write"));
+  session.defaultSession.setPermissionCheckHandler((_wc, perm) => perm === "clipboard-sanitized-write");
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

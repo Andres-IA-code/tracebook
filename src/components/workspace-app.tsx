@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { printHtml } from "@/lib/print-html";
 import { Authorizations, type Authorization } from "@/components/authorizations";
+import { ExportBackupDialog, DecryptBackupDialog } from "@/components/backup-dialogs";
+import { encryptBackup, decryptBackup, isEncryptedBackup } from "@/lib/backup-crypto";
 
 type View = "panel" | "proyectos" | "autorizaciones" | "hallazgos" | "biblioteca" | "informes" | "clientes" | "configuracion";
 type Project = { id: string; name: string; client: string; type: string; status: string; start: string; end: string };
@@ -65,11 +67,19 @@ function parseBackup(text: string): ImportPayload {
   return { data: normalizeData(obj as Partial<DataState>), settings };
 }
 function mergeById<T extends { id: string }>(current: T[], incoming: T[]) { const ids = new Set(current.map(x => x.id)); return [...current, ...incoming.filter(x => !ids.has(x.id))]; }
-function exportBackup(data: DataState, settings: SettingsState) {
-  const content = JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: BRAND.name, version: BRAND.version }, null, 2);
+function backupContent(data: DataState, settings: SettingsState) {
+  return JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: BRAND.name, version: BRAND.version }, null, 2);
+}
+function downloadJson(content: string, filename: string) {
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
-  const a = document.createElement("a"); a.href = url; a.download = `tracebook-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function exportBackup(data: DataState, settings: SettingsState, password?: string) {
+  const date = new Date().toISOString().slice(0, 10);
+  const content = backupContent(data, settings);
+  if (password) downloadJson(await encryptBackup(content, password), `tracebook-respaldo-cifrado-${date}.json`);
+  else downloadJson(content, `tracebook-respaldo-${date}.json`);
 }
 
 const navItems = [
@@ -113,7 +123,13 @@ export function WorkspaceApp() {
     const next = [{ id: crypto.randomUUID(), at: new Date().toISOString(), user: settings.userName || "Usuario sin nombre", action, detail }, ...current].slice(0, 500);
     window.localStorage.setItem(AUDIT_KEY, JSON.stringify(next)); return next;
   });
-  const doExport = () => { exportBackup(data, settings); log("Exportación", `Respaldo completo: ${data.projects.length} proyectos, ${data.findings.length} hallazgos, ${(data.authorizations ?? []).length} autorizaciones`); };
+  const [exportOpen, setExportOpen] = useState(false);
+  const doExport = () => setExportOpen(true);
+  const runExport = async (mode: "encrypted" | "plain", password: string) => {
+    await exportBackup(data, settings, mode === "encrypted" ? password : undefined);
+    log("Exportación", `Respaldo completo (${mode === "encrypted" ? "cifrado" : "sin cifrar"}): ${data.projects.length} proyectos, ${data.findings.length} hallazgos, ${(data.authorizations ?? []).length} autorizaciones`);
+  };
+  const [pendingDecrypt, setPendingDecrypt] = useState<{ text: string; name: string } | null>(null);
   const saveAudit = (next: AuditEntry[]) => { setAudit(next); window.localStorage.setItem(AUDIT_KEY, JSON.stringify(next)); };
   const [pendingAuditDelete, setPendingAuditDelete] = useState<string | "all" | null>(null);
   const deleteAuditEntry = (id: string) => setPendingAuditDelete(id);
@@ -132,11 +148,27 @@ export function WorkspaceApp() {
   const onImportFile = async (file?: File) => {
     if (!file) return;
     try {
-      const payload = parseBackup(await file.text());
-      const hasData = [data.projects, data.findings, data.clients, data.templates, data.authorizations ?? []].some(a => a.length > 0);
-      if (hasData) setPendingImport({ payload, name: file.name, confirmReplace: false });
-      else applyImport(payload, "replace", file.name);
+      const text = await file.text();
+      let parsed: unknown = null; try { parsed = JSON.parse(text); } catch { /* parseBackup informa el error */ }
+      if (isEncryptedBackup(parsed)) { setPendingDecrypt({ text, name: file.name }); return; }
+      continueImport(parseBackup(text), file.name);
     } catch (error) { setImportError(error instanceof Error ? error.message : "No se pudo leer el archivo."); }
+  };
+  const continueImport = (payload: ImportPayload, name: string) => {
+    {
+      const hasData = [data.projects, data.findings, data.clients, data.templates, data.authorizations ?? []].some(a => a.length > 0);
+      if (hasData) setPendingImport({ payload, name, confirmReplace: false });
+      else applyImport(payload, "replace", name);
+    }
+  };
+  const decryptImport = async (password: string) => {
+    if (!pendingDecrypt) return;
+    const plain = await decryptBackup(pendingDecrypt.text, password);
+    const name = `${pendingDecrypt.name} (cifrado)`;
+    let payload: ImportPayload;
+    try { payload = parseBackup(plain); } catch (error) { setPendingDecrypt(null); setImportError(error instanceof Error ? error.message : "No se pudo leer el archivo."); return; }
+    setPendingDecrypt(null);
+    continueImport(payload, name);
   };
   const applyImport = (payload: ImportPayload, mode: "merge" | "replace", name: string) => {
     setPendingImport(null);
@@ -299,6 +331,8 @@ export function WorkspaceApp() {
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingAuditDelete(null)}>Cancelar</Button><Button type="submit"><Trash2 />{pendingAuditDelete === "all" ? "Borrar todo" : "Eliminar"}</Button></div>
       </form></section></div>; })() : null}
     <input ref={importInput} type="file" accept="application/json,.json" hidden aria-label="Archivo de respaldo" onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; void onImportFile(file); }} />
+    {exportOpen ? <ExportBackupDialog onClose={() => setExportOpen(false)} onExport={runExport} /> : null}
+    {pendingDecrypt ? <DecryptBackupDialog fileName={pendingDecrypt.name} onClose={() => setPendingDecrypt(null)} onDecrypt={decryptImport} /> : null}
     {importError ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setImportError(""); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-error-title">
       <div className="modal-head"><div><small>Importar datos</small><h2 id="import-error-title">Archivo no válido</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setImportError("")}><X /></Button></div>
       <form onSubmit={event => { event.preventDefault(); setImportError(""); }}><p><AlertTriangle style={{display:"inline",width:14,height:14}} /> {importError}</p>
@@ -583,7 +617,7 @@ function Reports({ projects, findings, settings, onStatus }: { projects: Project
   const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
   const [preview, setPreview] = useState<Project | null>(null);
   const previewList = preview ? findings.filter(f => inProject(f, preview)) : [];
-  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{(() => { const loose = findings.filter(f => !projects.some(p => inProject(f, p))).length; return loose ? <Section><p className="form-error">{loose === 1 ? "Hay 1 hallazgo sin proyecto asignado" : `Hay ${loose} hallazgos sin proyecto asignado`}: no aparece en ningún informe. Editalo en Hallazgos y elegí su proyecto.</p></Section> : null; })()}{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>inProject(f, project)).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label={`Estado del informe de ${project.name}`} className="report-format" value={project.status === "Entregado" ? "Entregado" : "En preparación"} onChange={e => onStatus(project.id, e.target.value === "Entregado" ? "Entregado" : "Preparación")}><option value="En preparación">En preparación</option><option value="Entregado">Entregado</option></select><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select>{fmt === "latex" ? <Button size="sm" variant="outline" disabled={!total} onClick={() => setPreview(project)}><Eye/>Vista previa</Button> : null}<Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}
+  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{(() => { const loose = findings.filter(f => !projects.some(p => inProject(f, p))).length; return loose ? <Section><p className="form-error">{loose === 1 ? "Hay 1 hallazgo sin proyecto asignado" : `Hay ${loose} hallazgos sin proyecto asignado`}: no aparece en ningún informe. Editalo en Hallazgos y elegí su proyecto.</p></Section> : null; })()}{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>inProject(f, project)).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label={`Estado del informe de ${project.name}`} className="report-format" value={project.status === "Entregado" ? "Entregado" : "En preparación"} onChange={e => onStatus(project.id, e.target.value === "Entregado" ? "Entregado" : "Preparación")}><option value="En preparación">En preparación</option><option value="Entregado">Entregado</option></select><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select>{fmt === "latex" ? <Button size="sm" variant="outline" disabled={!total} onClick={() => setPreview(project)}><Eye/>Vista previa</Button> : null}<Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div><p className="report-note"><small>Los informes se guardan sin cifrar. Para enviarlos, comprimilos en un .zip o .7z con cifrado AES-256 y compartí la contraseña por otro medio.</small></p></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}
   {preview ? <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setPreview(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="latex-preview-title" style={{ width: "min(860px, 96vw)", maxWidth: "none" }}>
     <div className="modal-head"><div><small>Vista previa LaTeX</small><h2 id="latex-preview-title">{preview.name}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPreview(null)}><X/></Button></div>
     <iframe title="Vista previa del informe LaTeX" srcDoc={buildLatexPreviewHtml(preview, previewList, settings)} style={{ width: "100%", height: "65vh", border: 0, display: "block" }} />

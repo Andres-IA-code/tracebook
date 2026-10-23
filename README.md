@@ -49,6 +49,13 @@ Para mantenedores:
 2. En GitHub, ve a **Actions → "Publicar versión" → Run workflow** y ejecútalo.
 3. Cuando termine, revisa el borrador en **Releases** y publícalo.
 
+## Seguridad de los datos
+
+- Los datos se guardan solo en esta computadora, en la carpeta de la app y **sin cifrar**. La protección depende de la cuenta de usuario y del cifrado de disco del sistema (BitLocker, FileVault o LUKS), que recomendamos activar.
+- Los respaldos pueden exportarse cifrados con AES-256-GCM y una clave derivada con PBKDF2-SHA256 (600.000 iteraciones). La seguridad depende de la contraseña: recomendamos usar el generador de frases de la app. Si se pierde la contraseña, no hay forma de recuperarlos.
+- Los informes exportados no se cifran.
+- La app no se conecta a internet.
+
 ## Copias de seguridad
 En **Configuración → Exportar datos** se genera un archivo JSON con todo tu espacio de trabajo. Guárdalo en un lugar seguro; puedes restaurarlo con la opción de importación (combinar o reemplazar).
 
