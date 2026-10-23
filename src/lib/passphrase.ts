@@ -20,7 +20,9 @@ export function generatePassphrase(words = 5): string {
 const WORDSET = new Set(WORDLIST_ES);
 function isGeneratedPassphrase(pw: string): boolean {
   const parts = pw.split("-");
-  return parts.length === 5 && parts.every(p => WORDSET.has(p));
+  if (parts.length !== 5) return false;
+  if (!parts.every(p => WORDSET.has(p))) return false;
+  return new Set(parts).size === parts.length;
 }
 
 const BANNED = ["password", "contraseña", "contrasena", "tracebook", "pentest", "admin", "qwerty", "123456"];

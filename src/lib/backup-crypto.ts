@@ -34,7 +34,7 @@ function fromBase64(text: unknown): Uint8Array {
 }
 
 async function deriveKey(password: string, salt: Uint8Array, iterations: number) {
-  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password.normalize("NFC")), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey(
     { name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations },
     base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"],
