@@ -1,8 +1,9 @@
 // Lista de palabras en español para generar frases de contraseña.
-// Todas en minúsculas, sin tildes ni ñ, de 4 a 8 letras y sin repetir.
+// Todas en minúsculas y sin tildes; las palabras con ñ se escribieron con n.
+// De 4 a 8 letras y sin repetir.
 export const WORDLIST_ES: readonly string[] = [
   "abaco", "abdomen", "abeja", "abierto", "abogado", "abono", "abrazo", "abrir", "abuelo", "acabar", "academia", "acceso",
-  "accion", "aceite", "acelga", "acento", "aceptar", "acido", "aclarar", "acne", "acoger", "acoso", "activo", "acto",
+  "accion", "aceite", "acelga", "acento", "aceptar", "acido", "aclarar", "acoger", "acoso", "activo", "acto",
   "actriz", "actuar", "acudir", "acuerdo", "acusar", "adicto", "admitir", "adoptar", "adorno", "aduana", "adulto", "aereo",
   "afectar", "aficion", "afinar", "afirmar", "agil", "agitar", "agonia", "agosto", "agotar", "agregar", "agrio", "agua",
   "agudo", "aguila", "aguja", "ahogo", "ahorro", "aire", "aislar", "ajedrez", "ajeno", "ajuste", "alacran", "alambre",
@@ -44,7 +45,7 @@ export const WORDLIST_ES: readonly string[] = [
   "cumbre", "cumplir", "cuna", "cuneta", "cuota", "cupon", "cupula", "curar", "curioso", "curso", "curva", "cutis",
   "dama", "danza", "dardo", "datil", "deber", "debil", "decada", "decir", "dedo", "defensa", "definir", "dejar",
   "delfin", "delgado", "delito", "demora", "denso", "dental", "deporte", "derecho", "derrota", "desayuno", "deseo", "desfile",
-  "desnudo", "destino", "desvio", "detalle", "detener", "deuda", "diablo", "diadema", "diamante", "diana", "diario", "dibujo",
+  "desnudo", "destino", "desvio", "detalle", "detener", "deuda", "diadema", "diamante", "diana", "diario", "dibujo",
   "dictar", "diente", "dieta", "diez", "dificil", "digno", "dilema", "diluir", "dinero", "directo", "dirigir", "disco",
   "diseno", "disfraz", "diva", "divino", "doble", "doce", "dolor", "domingo", "donar", "dorado", "dormir", "dorso",
   "dosis", "dragon", "ducha", "duda", "duelo", "dueno", "dulce", "duque", "durar", "dureza", "duro", "ebano",
@@ -108,7 +109,7 @@ export const WORDLIST_ES: readonly string[] = [
   "octavo", "octubre", "oculto", "ocupar", "ocurrir", "odiar", "odio", "odisea", "oeste", "ofensa", "oferta", "oficio",
   "ofrecer", "ogro", "oido", "oleada", "olfato", "olivo", "olla", "olmo", "olor", "olvido", "ombligo", "onda",
   "onza", "opaco", "opcion", "opera", "opinar", "oponer", "optar", "optica", "opuesto", "oracion", "orador", "oral",
-  "orbita", "orca", "orden", "oreja", "organo", "orgia", "orgullo", "oriente", "origen", "orilla", "orquesta", "oruga",
+  "orbita", "orca", "orden", "oreja", "organo", "orgullo", "oriente", "origen", "orilla", "orquesta", "oruga",
   "osadia", "oscuro", "osezno", "ostra", "otono", "otro", "oveja", "ovulo", "oxido", "oxigeno", "oyente", "ozono",
   "pacto", "padre", "paella", "pagina", "pago", "pais", "pajaro", "palabra", "palco", "paleta", "palido", "palma",
   "paloma", "palpar", "panal", "panico", "pantera", "panuelo", "papa", "papel", "papilla", "paquete", "parar", "parcela",
@@ -138,9 +139,9 @@ export const WORDLIST_ES: readonly string[] = [
   "ruina", "ruleta", "rulo", "rumbo", "rumor", "ruptura", "ruta", "rutina", "sabado", "saber", "sabio", "sable",
   "sacar", "sagaz", "sagrado", "sala", "saldo", "salero", "salir", "salmon", "salon", "salsa", "salto", "salud",
   "salvar", "samba", "sancion", "sandia", "sanear", "sangre", "sanidad", "sano", "santo", "sapo", "saque", "sardina",
-  "sarten", "sastre", "satan", "sauna", "saxofon", "seccion", "seco", "secreto", "secta", "seguir", "seis", "sello",
+  "sarten", "sastre", "sauna", "saxofon", "seccion", "seco", "secreto", "secta", "seguir", "seis", "sello",
   "selva", "semana", "semilla", "senda", "sensor", "senal", "senor", "separar", "sepia", "sequia", "serie", "sermon",
-  "servir", "sesenta", "sesion", "seta", "setenta", "severo", "sexo", "sexto", "sidra", "siesta", "siete", "siglo",
+  "servir", "sesenta", "sesion", "seta", "setenta", "severo", "sexto", "sidra", "siesta", "siete", "siglo",
   "signo", "silaba", "silbar", "silencio", "silla", "simbolo", "simio", "sirena", "sistema", "sitio", "situar", "sobre",
   "socio", "sodio", "solapa", "soldado", "soledad", "solido", "soltar", "solucion", "sombra", "sondeo", "sonido", "sonoro",
   "sonrisa", "sopa", "soplar", "soporte", "sordo", "sorpresa", "sorteo", "sosten", "sotano", "suave", "subir", "suceso",
