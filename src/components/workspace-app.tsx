@@ -12,6 +12,7 @@ import { printHtml } from "@/lib/print-html";
 import { Authorizations, type Authorization } from "@/components/authorizations";
 import { ExportBackupDialog, DecryptBackupDialog } from "@/components/backup-dialogs";
 import { encryptBackup, decryptBackup, isEncryptedBackup } from "@/lib/backup-crypto";
+import { applyTheme, readTheme, saveTheme, type Theme } from "@/lib/theme";
 
 type View = "panel" | "proyectos" | "autorizaciones" | "hallazgos" | "biblioteca" | "informes" | "clientes" | "configuracion";
 type Project = { id: string; name: string; client: string; type: string; status: string; start: string; end: string };
@@ -113,6 +114,12 @@ export function WorkspaceApp() {
   const [notice, setNotice] = useState("");
   const [data, setData] = useState<DataState>(EMPTY_DATA);
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
+  const [theme, setTheme] = useState<Theme>("dark");
+  const changeTheme = (next: Theme) => {
+    saveTheme(window.localStorage, next);
+    setTheme(next);
+    applyTheme(next);
+  };
   const [createKind, setCreateKind] = useState<CreateKind>(null);
   const [editingFinding, setEditingFinding] = useState<Finding | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -188,7 +195,9 @@ export function WorkspaceApp() {
   };
 
   useEffect(() => {
-    window.localStorage.removeItem("vertice-theme");
+    const savedTheme = readTheme(window.localStorage);
+    setTheme(savedTheme);
+    applyTheme(savedTheme);
     const savedData = window.localStorage.getItem(STORAGE_KEY);
     if (savedData) {
       try {
@@ -315,7 +324,7 @@ export function WorkspaceApp() {
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
         {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} onStatus={setProjectStatus} />}
         {view === "clientes" && <Clients clients={data.clients} projects={data.projects} create={() => setCreateKind("client")} onDelete={deleteClient} onUpdate={updateClient} />}
-        {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} importData={startImport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
+        {view === "configuracion" && <SettingsPage theme={theme} onThemeChange={changeTheme} settings={settings} onSave={updateSettings} exportData={doExport} importData={startImport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
       </main>
     </div>
     {createKind ? <CreateDialog kind={createKind} projects={data.projects} templates={data.templates} onClose={() => setCreateKind(null)} onSave={addItem} /> : null}
@@ -653,7 +662,7 @@ function Clients({ clients, projects, create, onDelete, onUpdate }: { clients: C
   </section></div>; })() : null}</>;
 }
 
-function SettingsPage({ settings, onSave, exportData, importData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; importData: () => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
+function SettingsPage({ theme, onThemeChange, settings, onSave, exportData, importData, audit, onDeleteAudit, onClearAudit, onResetSettings }: { theme: Theme; onThemeChange: (theme: Theme) => void; settings: SettingsState; onSave: (settings: SettingsState) => void; exportData: () => void; importData: () => void; audit: AuditEntry[]; onDeleteAudit: (id: string) => void; onClearAudit: () => void; onResetSettings: () => void }) {
   const [draft, setDraft] = useState(settings);
   const logoRef = useRef<HTMLInputElement>(null);
   useEffect(() => setDraft(settings), [settings]);
@@ -669,6 +678,7 @@ function SettingsPage({ settings, onSave, exportData, importData, audit, onDelet
   return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={importData}><Download />Importar datos</Button><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
     <form className="settings-layout" onSubmit={submit}>
       <div className="stack">
+        <Section title="Apariencia" className="settings-section"><div className="setting-row"><b>Tema</b><div className="flex gap-2" role="group" aria-label="Tema de la aplicación"><Button type="button" variant={theme === "light" ? "default" : "outline"} aria-pressed={theme === "light"} onClick={() => onThemeChange("light")}>Claro</Button><Button type="button" variant={theme === "dark" ? "default" : "outline"} aria-pressed={theme === "dark"} onClick={() => onThemeChange("dark")}>Oscuro</Button></div></div></Section>
         <Section title="Consultora" className="settings-section"><Field label="Nombre de la consultora" name="organization" value={draft.organization} required onChange={value => set("organization", value)} /><p className="field-help">Este nombre se muestra en la navegación y en los informes.</p></Section>
         <Section title="Perfil" className="settings-section"><div className="form-grid"><Field label="Nombre completo" name="userName" value={draft.userName} required onChange={value => set("userName", value)} /><Field label="Correo electrónico" name="email" type="email" value={draft.email} required onChange={value => set("email", value)} /><SelectField label="Rol" name="role" options={["Responsable","Pentester","Revisor"]} value={draft.role} onChange={value => set("role", value)} /><SelectField label="Zona horaria" name="timezone" options={["America/Argentina/Buenos_Aires","America/Bogota","America/Santiago","America/Mexico_City","Europe/Madrid"]} value={draft.timezone} onChange={value => set("timezone", value)} /></div></Section>
         <Section title="Plantilla LaTeX" className="settings-section">

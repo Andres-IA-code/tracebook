@@ -16,7 +16,7 @@
 - Package with electron-builder (`electron-builder.yml`, output `release/`); desktop build is a static Vite entry in `desktop/` with a strict CSP and no external origins.
 - Bundle fonts locally via @fontsource imports at the top of `src/styles.css` because the app must never contact external servers.
 - Keep desktop startup local-only and package its application files into ASAR to minimize startup filesystem work.
-- Keep the app permanently dark-themed across web and desktop; do not expose a light-mode switch.
+- Apply the local appearance preference through the shared theme module and semantic CSS tokens in both preview and desktop; persist it independently from workspace settings so changing appearance never overwrites unsaved form edits.
 - Link findings to projects by `projectId` (legacy name links are upgraded on load/import); project deletion cascades to linked findings and authorizations, so records never orphan.
 - Print reports/authorizations through a hidden in-page iframe (`src/lib/print-html.ts`), because Electron blocks new blank windows.
 - Keep LaTeX report branding in the persisted workspace settings and embed custom logos into the generated source so exports remain portable.

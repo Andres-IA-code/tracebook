@@ -12,7 +12,7 @@
 - [x] Add browser installation metadata and branded app icons
 - [x] Add downloadable desktop packages for Windows, macOS, and Linux
 - [x] Optimize desktop startup and regenerate the three download packages
-- [x] Remove light mode and keep the interface permanently dark
+- [x] Offer light/dark appearance in Configuración with a locally remembered choice
 - [x] Add customizable LaTeX report branding and team contact details
 - [x] Organize LaTeX reports with cover, index, summary, project data, and severity-grouped findings
 - [x] Convert to desktop-only open-source app (no landing, accounts or network)
