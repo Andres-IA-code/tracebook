@@ -21,4 +21,5 @@
 - [x] Rename panel metric to "Informes entregados" and count delivered projects
 - [x] Add panel counters for projects in test, in review and delivered
 - [x] Use the uploaded Apollo binder photo as the bundled app logo (sidebar and mobile bar)
+- [x] Keep exported and printed reports light regardless of app appearance; verify both themes
 

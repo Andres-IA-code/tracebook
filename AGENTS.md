@@ -19,6 +19,7 @@
 - Apply the local appearance preference through the shared theme module and semantic CSS tokens in both preview and desktop; persist it independently from workspace settings so changing appearance never overwrites unsaved form edits.
 - Link findings to projects by `projectId` (legacy name links are upgraded on load/import); project deletion cascades to linked findings and authorizations, so records never orphan.
 - Print reports/authorizations through a hidden in-page iframe (`src/lib/print-html.ts`), because Electron blocks new blank windows.
+- Give exported HTML and print iframe documents their own light color scheme and paper/ink tokens, so app appearance never changes document rendering; LaTeX uses its independent report branding.
 - Keep LaTeX report branding in the persisted workspace settings and embed custom logos into the generated source so exports remain portable.
 - Keep every package URL in `bun.lock` on the public registry https://registry.npmjs.org/ (fix with `node scripts/fix-lockfile.mjs`), so anyone can clone and run `bun install`.
 - Never rename the localStorage keys `vertice-workspace-data`, `vertice-settings`, `vertice-audit`; they are kept on purpose for compatibility with data already saved.

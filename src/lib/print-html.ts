@@ -8,6 +8,10 @@ export function printHtml(html: string): boolean {
     const doc = frame.contentDocument; const win = frame.contentWindow;
     if (!doc || !win) { frame.remove(); throw new Error("no frame"); }
     doc.open(); doc.write(html.replace(/<script>window\.onload=\(\)=>window\.print\(\)<\/script>/, "")); doc.close();
+    // Print documents are isolated from the application's appearance preference.
+    const paperStyle = doc.createElement("style");
+    paperStyle.textContent = ":root{color-scheme:only light;--print-paper:#fff;--print-ink:#141414;background:var(--print-paper);color:var(--print-ink)}body{background:var(--print-paper);color:var(--print-ink)}";
+    doc.head.appendChild(paperStyle);
     const run = () => { try { win.focus(); win.print(); } catch { window.alert("No se pudo abrir la impresión."); } setTimeout(() => frame.remove(), 60000); };
     if (doc.readyState === "complete") setTimeout(run, 150); else frame.onload = () => setTimeout(run, 150);
     return true;
