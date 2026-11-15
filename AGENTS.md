@@ -25,3 +25,4 @@
 - Never rename the localStorage keys `vertice-workspace-data`, `vertice-settings`, `vertice-audit`; they are kept on purpose for compatibility with data already saved.
 - Encrypted backups use only Web Crypto (src/lib/backup-crypto.ts, versioned file format); never log or persist passwords, so backups stay safe and offline.
 - Finding technical fields are optional and normalized on load/import; evidence images are validated PNG/JPEG data URLs stored inside the existing workspace and backups, so legacy records remain compatible and attachments stay offline and portable.
+- CVSS base metrics use the bundled js-cvss 3.1 impact/exploitability engine with FIRST Appendix A rounding in a shared browser-safe module; CWE, score, and vector remain separate optional fields, and manual severity overrides persist without being recalculated on load.

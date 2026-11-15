@@ -1,5 +1,5 @@
 export type Evidence = { id: string; name: string; dataUrl: string; caption: string };
-export type TechnicalDetails = { description?: string; impact?: string; recommendation?: string; references?: string[] };
+export type TechnicalDetails = { cwe?: string; cvssScore?: number | undefined; cvssVector?: string; description?: string; impact?: string; recommendation?: string; references?: string[] };
 export type FindingDetails = TechnicalDetails & { affectedAsset?: string; reproductionSteps?: string; evidences?: Evidence[] };
 
 export function normalizeFindingDetails(value: FindingDetails) {
@@ -7,7 +7,7 @@ export function normalizeFindingDetails(value: FindingDetails) {
 }
 
 export function detailsFromTemplate(template: TechnicalDetails) {
-  return { description: template.description ?? "", impact: template.impact ?? "", recommendation: template.recommendation ?? "", references: [...(template.references ?? [])] };
+  return { ...(template.cwe !== undefined ? { cwe: template.cwe } : {}), ...(template.cvssScore !== undefined ? { cvssScore: template.cvssScore } : {}), ...(template.cvssVector !== undefined ? { cvssVector: template.cvssVector } : {}), description: template.description ?? "", impact: template.impact ?? "", recommendation: template.recommendation ?? "", references: [...(template.references ?? [])] };
 }
 
 export function parseReferences(text: string) {
