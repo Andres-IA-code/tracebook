@@ -52,8 +52,10 @@ Para mantenedores:
 
 ## Seguridad de los datos
 
-- Los datos se guardan solo en esta computadora, en la carpeta de la app y **sin cifrar**. La protección depende de la cuenta de usuario y del cifrado de disco del sistema (BitLocker, FileVault o LUKS), que recomendamos activar.
-- Los respaldos pueden exportarse cifrados con AES-256-GCM y una clave derivada con PBKDF2-SHA256 (600.000 iteraciones). La seguridad depende de la contraseña: recomendamos usar el generador de frases de la app. Si se pierde la contraseña, no hay forma de recuperarlos.
+- Los datos se guardan solo en esta computadora, cifrados con AES-256-GCM. Proyectos, autorizaciones, hallazgos, evidencias, informes, clientes, plantillas, configuración y auditoría se protegen con una contraseña maestra de al menos 12 caracteres. La primera apertura migra los datos anteriores después de verificar el cifrado.
+- La clave se deriva con PBKDF2-SHA-256 (600.000 iteraciones y salt aleatorio de 16 bytes), no es exportable y solo permanece en memoria durante la sesión. Cada guardado usa un IV aleatorio de 12 bytes. No se guarda la contraseña ni la clave. Si se pierde la contraseña maestra, no hay forma de recuperar los datos o las copias.
+- La app se bloquea después de 15 minutos de inactividad; el tiempo se configura entre 1 y 1440 minutos en Configuración. También se puede bloquear manualmente. Guardá los formularios antes de alejarte: las ediciones no guardadas se descartan al bloquear.
+- El cifrado protege los datos en reposo, no frente a malware o acceso a la sesión desbloqueada. Recomendamos además cifrado de disco (BitLocker, FileVault o LUKS). La migración elimina las entradas anteriores, pero no garantiza borrar sus restos históricos del disco ni copias antiguas sin cifrar.
 - Los informes exportados no se cifran.
 - La app no se conecta a internet.
 
@@ -75,11 +77,9 @@ sys.stdout.write(data.decode("utf-8"))
 Uso: `python descifrar.py tracebook-respaldo-cifrado-AAAA-MM-DD.json > respaldo.json`
 
 ## Copias de seguridad
-En Configuración → Exportar datos (o desde el Panel) puedes generar un respaldo de todo tu espacio de trabajo:
-* Cifrado con contraseña (recomendado): genera `tracebook-respaldo-cifrado-AAAA-MM-DD.json`. Usa el botón "Generar contraseña" para obtener una frase de 5 palabras y guárdala en tu gestor de contraseñas. Si la pierdes, el respaldo no se puede recuperar.
-* Sin cifrar: genera `tracebook-respaldo-AAAA-MM-DD.json`, legible por cualquiera que tenga el archivo.
+En Configuración → Crear copia de seguridad (o Exportar datos desde el Panel) se genera `tracebook-respaldo-cifrado-AAAA-MM-DD.json`, siempre cifrado con la contraseña maestra, incluyendo configuración y auditoría. No existe exportación de datos sin cifrar; los informes PDF/Word siguen siendo documentos legibles para entregar.
 
-Para restaurarlo usa Importar datos: si el archivo está cifrado, la app pedirá la contraseña. Luego eliges combinar con tus datos actuales o reemplazarlos. Los respaldos sin cifrar de versiones anteriores se siguen importando igual.
+Para restaurarlo usá Restaurar copia de seguridad en Configuración (o Importar datos en el Panel): la app pide la contraseña del archivo. Luego elegís combinar o reemplazar; los datos restaurados se guardan cifrados con la contraseña maestra de la sesión actual. Los respaldos sin cifrar de versiones anteriores se siguen importando por compatibilidad, pero nunca se vuelven a guardar en texto plano.
 
 ## Aviso legal
 Esta herramienta sirve para documentar pruebas de seguridad **autorizadas** por escrito. Su uso contra sistemas sin permiso es responsabilidad exclusiva del usuario.

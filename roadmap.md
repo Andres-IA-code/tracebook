@@ -25,4 +25,5 @@
 - [x] Extend finding fields, collapsible form, local image evidence, and reusable library templates; verify legacy compatibility and persistence
 - [x] Add offline CVSS 3.1 calculator, separate validated CWE/CVSS fields, automatic severity with manual override, and saved-vector restoration
 - [x] Generate and save technical/executive project reports with preview, signed scope, branding, PDF/Word and independent delivery status; verified downloads, evidence, selection and persistence
+- [x] Protect local data with master password, verified encrypted migration, inactivity lock and encrypted full backups; verified migration, incorrect password, manual/automatic lock, restore and reopen, plus 38 unit tests
 

@@ -33,7 +33,7 @@ function fromBase64(text: unknown): Uint8Array {
   } catch { throw new Error(ERR_INVALID); }
 }
 
-async function deriveKey(password: string, salt: Uint8Array, iterations: number) {
+export async function deriveKey(password: string, salt: Uint8Array, iterations: number) {
   const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password.normalize("NFC")), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey(
     { name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations },
@@ -47,19 +47,23 @@ export function isEncryptedBackup(obj: unknown): boolean {
 
 export async function encryptBackup(plainText: string, password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(password, salt, ITERATIONS);
+  return encryptWithKey(plainText, key, { name: "PBKDF2", hash: "SHA-256", iterations: ITERATIONS, salt: toBase64(salt) });
+}
+
+export async function encryptWithKey(plainText: string, key: CryptoKey, kdf: EncryptedBackup["kdf"]): Promise<string> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
   const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: AAD }, key, new TextEncoder().encode(plainText)));
   const file: EncryptedBackup = {
     format: ENCRYPTED_FORMAT, version: 1, app: "Tracebook",
-    kdf: { name: "PBKDF2", hash: "SHA-256", iterations: ITERATIONS, salt: toBase64(salt) },
+    kdf,
     cipher: { name: "AES-GCM", iv: toBase64(iv) },
     data: toBase64(cipher),
   };
   return JSON.stringify(file, null, 2);
 }
 
-export async function decryptBackup(fileText: string, password: string): Promise<string> {
+export async function openEncrypted(fileText: string, password: string): Promise<{ plain: string; key: CryptoKey; kdf: EncryptedBackup["kdf"] }> {
   let obj: Record<string, unknown>;
   try { obj = JSON.parse(fileText) as Record<string, unknown>; } catch { throw new Error(ERR_INVALID); }
   if (!isEncryptedBackup(obj)) throw new Error(ERR_INVALID);
@@ -76,6 +80,10 @@ export async function decryptBackup(fileText: string, password: string): Promise
   try {
     const key = await deriveKey(password, salt, iterations);
     const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv as BufferSource, additionalData: AAD }, key, data as BufferSource);
-    return new TextDecoder().decode(plain);
+    return { plain: new TextDecoder().decode(plain), key, kdf: { name: "PBKDF2", hash: "SHA-256", iterations, salt: String(kdf["salt"]) } };
   } catch { throw new Error(ERR_PASSWORD); }
+}
+
+export async function decryptBackup(fileText: string, password: string): Promise<string> {
+  return (await openEncrypted(fileText, password)).plain;
 }

@@ -1,3 +1,5 @@
+import { VaultGate } from "@/components/vault-gate";
+import { lockMinutes, type VaultSession } from "@/lib/data-vault";
 import { FinalReports } from "@/components/final-reports";
 import { deliveredReportCount, type FinalReport } from "@/lib/reports";
 import { BRAND } from "@/brand";
@@ -5,7 +7,7 @@ import tracebookLogo from "@/assets/tracebook-logo.png";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle, BookOpen, Bug, Download, Building2, Check, ChevronDown, Eye, FileText, FolderOpen,
-  LayoutDashboard, LogOut, Menu, Moon, Pencil, Play, Plus, RotateCcw, Search, Send, Settings, ShieldCheck, Sun, Trash2, Upload, X,
+  LayoutDashboard, LockKeyhole, LogOut, Menu, Moon, Pencil, Play, Plus, RotateCcw, Search, Send, Settings, ShieldCheck, Sun, Trash2, Upload, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,8 +18,8 @@ import { FindingEvidence, TechnicalDetailView } from "@/components/finding-evide
 import { normalizeFindingDetails, detailsFromTemplate, parseReferences, type FindingDetails, type TechnicalDetails, type Evidence } from "@/lib/finding-details";
 import { printHtml } from "@/lib/print-html";
 import { Authorizations, type Authorization } from "@/components/authorizations";
-import { ExportBackupDialog, DecryptBackupDialog } from "@/components/backup-dialogs";
-import { encryptBackup, decryptBackup, isEncryptedBackup } from "@/lib/backup-crypto";
+import { DecryptBackupDialog } from "@/components/backup-dialogs";
+import { decryptBackup, isEncryptedBackup } from "@/lib/backup-crypto";
 import { applyTheme, readTheme, saveTheme, type Theme } from "@/lib/theme";
 
 type View = "panel" | "proyectos" | "autorizaciones" | "hallazgos" | "biblioteca" | "informes" | "clientes" | "configuracion";
@@ -29,7 +31,7 @@ type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; 
 type SettingsState = {
   organization: string; userName: string; email: string; role: string; timezone: string;
   latexLogo: string; latexPrimaryColor: string; latexTextColor: string; latexSecondaryColor: string;
-  teamPhone: string; teamWebsite: string; teamAddress: string;
+  teamPhone: string; teamWebsite: string; teamAddress: string; autoLockMinutes: number;
 };
 type CreateKind = "project" | "finding" | "client" | "template" | null;
 type PendingDelete = { group: string; heading: string; description: ReactNode; confirmLabel: string; run: () => void };
@@ -40,16 +42,13 @@ const PROJECT_STATUS_ICONS: Record<string, typeof FolderOpen> = { "Preparación"
 const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [], reports: [] };
 // Storage keys intentionally keep the legacy "vertice-*" names for compatibility:
 // renaming them would make the app lose data people already saved.
-const STORAGE_KEY = "vertice-workspace-data";
-const SETTINGS_KEY = "vertice-settings";
 const DEFAULT_SETTINGS: SettingsState = {
   organization: "", userName: "", email: "", role: "Responsable", timezone: "America/Argentina/Buenos_Aires",
   latexLogo: "", latexPrimaryColor: "#D9641E",
-  latexTextColor: "#141414", latexSecondaryColor: "#757575", teamPhone: "", teamWebsite: "", teamAddress: "",
+  latexTextColor: "#141414", latexSecondaryColor: "#757575", teamPhone: "", teamWebsite: "", teamAddress: "", autoLockMinutes: 15,
 };
 
 type AuditEntry = { id: string; at: string; user: string; action: "Importación" | "Exportación" | "Eliminación" | "Actualización"; detail: string };
-const AUDIT_KEY = "vertice-audit";
 function normalizeData(parsed: Partial<DataState>): DataState {
   const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [], reports: parsed.reports ?? [] };
   if (![next.projects, next.findings, next.clients, next.templates, next.authorizations, next.reports].every(Array.isArray)) throw new Error("formato");
@@ -62,7 +61,7 @@ function normalizeData(parsed: Partial<DataState>): DataState {
   next.templates = next.templates.map(t => ({ ...t, ...detailsFromTemplate(t) }));
   return next;
 }
-type ImportPayload = { data: DataState; settings: Partial<SettingsState> | null };
+type ImportPayload = { data: DataState; settings: Partial<SettingsState> | null; audit: AuditEntry[] };
 function parseBackup(text: string): ImportPayload {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch { throw new Error("El archivo no es un JSON válido."); }
@@ -73,24 +72,14 @@ function parseBackup(text: string): ImportPayload {
   for (const k of keys) if (k in obj && !Array.isArray(obj[k])) throw new Error(`El campo "${k}" no tiene un formato válido.`);
   for (const k of keys) for (const item of (obj[k] as unknown[] | undefined) ?? []) if (!item || typeof item !== "object" || typeof (item as { id?: unknown }).id !== "string") throw new Error(`Hay registros sin identificador en "${k}".`);
   const settings = obj["settings"] && typeof obj["settings"] === "object" && !Array.isArray(obj["settings"]) ? obj["settings"] as Partial<SettingsState> : null;
-  return { data: normalizeData(obj as Partial<DataState>), settings };
+  return { data: normalizeData(obj as Partial<DataState>), settings, audit: Array.isArray(obj["audit"]) ? obj["audit"] as AuditEntry[] : [] };
 }
 function mergeById<T extends { id: string }>(current: T[], incoming: T[]) { const ids = new Set(current.map(x => x.id)); return [...current, ...incoming.filter(x => !ids.has(x.id))]; }
-function backupContent(data: DataState, settings: SettingsState) {
-  return JSON.stringify({ ...data, settings, exportedAt: new Date().toISOString(), app: BRAND.name, version: BRAND.version }, null, 2);
-}
 function downloadJson(content: string, filename: string) {
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
   const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-async function exportBackup(data: DataState, settings: SettingsState, password?: string) {
-  const date = new Date().toISOString().slice(0, 10);
-  const content = backupContent(data, settings);
-  if (password) downloadJson(await encryptBackup(content, password), `tracebook-respaldo-cifrado-${date}.json`);
-  else downloadJson(content, `tracebook-respaldo-${date}.json`);
-}
-
 const navItems = [
   ["panel", "Panel", LayoutDashboard], ["proyectos", "Proyectos", FolderOpen],
   ["autorizaciones", "Autorizaciones", ShieldCheck], ["hallazgos", "Hallazgos", Bug],
@@ -117,12 +106,14 @@ function EmptyState({ icon: Icon, title, text, action }: { icon: typeof FolderOp
   return <div className="empty-state"><span><Icon /></span><h3>{title}</h3><p>{text}</p>{action}</div>;
 }
 
-export function WorkspaceApp() {
+export function WorkspaceApp() { return <VaultGate>{(session, lock) => <UnlockedWorkspace session={session} onLock={lock}/>}</VaultGate>; }
+
+function UnlockedWorkspace({ session, onLock }: { session: VaultSession; onLock: () => void }) {
   const [view, setView] = useState<View>("panel");
   const [mobileNav, setMobileNav] = useState(false);
   const [notice, setNotice] = useState("");
-  const [data, setData] = useState<DataState>(EMPTY_DATA);
-  const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
+  const [data, setData] = useState<DataState>(() => normalizeData(session.payload.data as Partial<DataState>));
+  const [settings, setSettings] = useState<SettingsState>(() => ({ ...DEFAULT_SETTINGS, ...session.payload.settings, autoLockMinutes: lockMinutes(session.payload.settings["autoLockMinutes"]) }));
   const [theme, setTheme] = useState<Theme>("dark");
   const changeTheme = (next: Theme) => {
     saveTheme(window.localStorage, next);
@@ -133,20 +124,17 @@ export function WorkspaceApp() {
   const [editingFinding, setEditingFinding] = useState<Finding | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [pendingReset, setPendingReset] = useState(false);
-  const [audit, setAudit] = useState<AuditEntry[]>([]);
-  useEffect(() => { try { const a = JSON.parse(window.localStorage.getItem(AUDIT_KEY) ?? "[]"); if (Array.isArray(a)) setAudit(a); } catch { /* ignore */ } }, []);
-  const log = (action: AuditEntry["action"], detail: string) => setAudit(current => {
-    const next = [{ id: crypto.randomUUID(), at: new Date().toISOString(), user: settings.userName || "Usuario sin nombre", action, detail }, ...current].slice(0, 500);
-    window.localStorage.setItem(AUDIT_KEY, JSON.stringify(next)); return next;
-  });
-  const [exportOpen, setExportOpen] = useState(false);
-  const doExport = () => setExportOpen(true);
-  const runExport = async (mode: "encrypted" | "plain", password: string) => {
-    await exportBackup(data, settings, mode === "encrypted" ? password : undefined);
-    log("Exportación", `Respaldo completo (${mode === "encrypted" ? "cifrado" : "sin cifrar"}): ${data.projects.length} proyectos, ${data.findings.length} hallazgos, ${(data.authorizations ?? []).length} autorizaciones`);
+  const [audit, setAudit] = useState<AuditEntry[]>(() => session.payload.audit as AuditEntry[]);
+  const saveAudit = (next: AuditEntry[]) => { session.update({ audit: next }); setAudit(next); };
+  const log = (action: AuditEntry["action"], detail: string) => {
+    const current = session.payload.audit as AuditEntry[];
+    saveAudit([{ id: crypto.randomUUID(), at: new Date().toISOString(), user: settings.userName || "Usuario sin nombre", action, detail }, ...current].slice(0, 500));
   };
+  const doExport = () => { void (async () => {
+    try { downloadJson(await session.backup(), `tracebook-respaldo-cifrado-${new Date().toISOString().slice(0, 10)}.json`); log("Exportación", "Copia de seguridad completa cifrada"); }
+    catch { confirm("No se pudo crear la copia de seguridad cifrada"); }
+  })(); };
   const [pendingDecrypt, setPendingDecrypt] = useState<{ text: string; name: string } | null>(null);
-  const saveAudit = (next: AuditEntry[]) => { setAudit(next); window.localStorage.setItem(AUDIT_KEY, JSON.stringify(next)); };
   const [pendingAuditDelete, setPendingAuditDelete] = useState<string | "all" | null>(null);
   const deleteAuditEntry = (id: string) => setPendingAuditDelete(id);
   const clearAudit = () => setPendingAuditDelete("all");
@@ -190,7 +178,8 @@ export function WorkspaceApp() {
     setPendingImport(null);
     if (mode === "replace") {
       updateData(payload.data);
-      if (payload.settings) { const { emailAlerts: _ea, reportAlerts: _ra, ...importedSettings } = payload.settings as SettingsState & { emailAlerts?: unknown; reportAlerts?: unknown }; void _ea; void _ra; const next = { ...DEFAULT_SETTINGS, ...importedSettings }; setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); }
+      saveAudit(payload.audit);
+      if (payload.settings) { const { emailAlerts: _ea, reportAlerts: _ra, ...importedSettings } = payload.settings as SettingsState & { emailAlerts?: unknown; reportAlerts?: unknown }; void _ea; void _ra; const next = { ...DEFAULT_SETTINGS, ...importedSettings }; setSettings(next); session.update({ settings: next }); }
       log("Importación", `Reemplazo total desde ${name}: ${countOf(payload.data)}`);
       confirm("Datos importados");
     } else {
@@ -198,6 +187,7 @@ export function WorkspaceApp() {
       const merged = normalizeData({ projects: mergeById(cur.projects, payload.data.projects), findings: mergeById(cur.findings, payload.data.findings), clients: mergeById(cur.clients, payload.data.clients), templates: mergeById(cur.templates, payload.data.templates), authorizations: mergeById(cur.authorizations, payload.data.authorizations), reports: mergeById(cur.reports, payload.data.reports) });
       const added = { projects: merged.projects.length - cur.projects.length, findings: merged.findings.length - cur.findings.length, authorizations: merged.authorizations.length - cur.authorizations.length, clients: merged.clients.length - cur.clients.length, templates: merged.templates.length - cur.templates.length };
       updateData(merged);
+      saveAudit(mergeById(session.payload.audit as AuditEntry[], payload.audit));
       log("Importación", `Combinación desde ${name}: se agregaron ${added.projects} proyectos, ${added.findings} hallazgos, ${added.authorizations} autorizaciones, ${added.clients} clientes, ${added.templates} plantillas`);
       confirm("Datos combinados");
     }
@@ -207,28 +197,16 @@ export function WorkspaceApp() {
     const savedTheme = readTheme(window.localStorage);
     setTheme(savedTheme);
     applyTheme(savedTheme);
-    const savedData = window.localStorage.getItem(STORAGE_KEY);
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData) as Partial<DataState>;
-        setData(normalizeData(parsed));
-      } catch { window.localStorage.removeItem(STORAGE_KEY); }
-    }
-    const savedSettings = window.localStorage.getItem(SETTINGS_KEY);
-    if (savedSettings) {
-      try { setSettings({ ...DEFAULT_SETTINGS, ...(JSON.parse(savedSettings) as Partial<SettingsState>) }); }
-      catch { window.localStorage.removeItem(SETTINGS_KEY); }
-    }
   }, []);
 
-  const updateData = (next: DataState) => { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); setData(next); };
-  const updateSettings = (next: SettingsState) => { setSettings(next); window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); confirm("Configuración guardada"); };
+  const updateData = (next: DataState) => { session.update({ data: next }); setData(next); };
+  const updateSettings = (next: SettingsState) => { const validated = { ...next, autoLockMinutes: lockMinutes(next.autoLockMinutes) }; session.update({ settings: validated }); setSettings(validated); confirm("Configuración guardada"); };
   const resetSettings = () => setPendingReset(true);
   const applyResetSettings = () => {
     setPendingReset(false);
     log("Eliminación", "Configuración restablecida a los valores predeterminados");
     setSettings(DEFAULT_SETTINGS);
-    window.localStorage.removeItem(SETTINGS_KEY);
+    session.update({ settings: DEFAULT_SETTINGS });
     confirm("Configuración restablecida");
   };
   const confirm = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 2600); };
@@ -321,7 +299,7 @@ export function WorkspaceApp() {
       <div className="brand"><img className="brand-mark brand-logo" src={tracebookLogo} alt="" />{BRAND.name}<Button variant="ghost" size="icon" className="close-nav" aria-label="Cerrar menú" onClick={() => setMobileNav(false)}><X /></Button></div>
       <button className="org-switcher" onClick={() => go("configuracion")}><span className="org-avatar">{initials(settings.organization || BRAND.name)}</span><span><b>{settings.organization || "Mi consultora"}</b><small>Espacio de trabajo</small></span><ChevronDown /></button>
       <nav aria-label="Navegación principal">{navItems.map(([key,label,Icon]) => <button key={key} className={cn("nav-item", view === key && "active")} onClick={() => go(key)}><Icon /><span>{label}</span></button>)}</nav>
-      <div className="sidebar-foot"><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.desktopBridge?.quit()}><LogOut /><span>Salir</span></button> : null}<div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
+      <div className="sidebar-foot"><Button variant="ghost" className="nav-item" onClick={onLock}><LockKeyhole/><span>Bloquear</span></Button><button className={cn("nav-item", view === "configuracion" && "active")} onClick={() => go("configuracion")}><Settings /><span>Configuración</span></button>{isDesktopApp ? <button className="nav-item nav-exit" onClick={() => window.desktopBridge?.quit()}><LogOut /><span>Salir</span></button> : null}<div className="profile"><span>{initials(settings.userName || "Usuario")}</span><div><b>{settings.userName || "Usuario"}</b><small>{settings.role}</small></div></div></div>
     </aside>
     {mobileNav ? <button className="nav-scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} /> : null}
     <div className="workspace"><div className="mobile-bar"><Button variant="ghost" size="icon" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu /></Button><div className="brand"><img className="brand-mark brand-logo" src={tracebookLogo} alt="" />{BRAND.name}</div></div>
@@ -349,7 +327,6 @@ export function WorkspaceApp() {
         <div className="modal-actions"><Button type="button" variant="outline" onClick={() => setPendingAuditDelete(null)}>Cancelar</Button><Button type="submit"><Trash2 />{pendingAuditDelete === "all" ? "Borrar todo" : "Eliminar"}</Button></div>
       </form></section></div>; })() : null}
     <input ref={importInput} type="file" accept="application/json,.json" hidden aria-label="Archivo de respaldo" onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; void onImportFile(file); }} />
-    {exportOpen ? <ExportBackupDialog onClose={() => setExportOpen(false)} onExport={runExport} /> : null}
     {pendingDecrypt ? <DecryptBackupDialog fileName={pendingDecrypt.name} onClose={() => setPendingDecrypt(null)} onDecrypt={decryptImport} /> : null}
     {importError ? <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setImportError(""); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="import-error-title">
       <div className="modal-head"><div><small>Importar datos</small><h2 id="import-error-title">Archivo no válido</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setImportError("")}><X /></Button></div>
@@ -684,9 +661,10 @@ function SettingsPage({ settings, onSave, exportData, importData, audit, onDelet
     reader.onload = () => { if (typeof reader.result === "string") set("latexLogo", reader.result); };
     reader.readAsDataURL(file);
   };
-  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={importData}><Download />Importar datos</Button><Button type="button" variant="outline" onClick={exportData}><Upload />Exportar datos</Button></Header>
+  return <><Header title="Configuración" sub="Administra los datos y preferencias de tu espacio de trabajo"><Button type="button" variant="outline" onClick={importData}><Download />Restaurar copia de seguridad</Button><Button type="button" variant="outline" onClick={exportData}><Upload />Crear copia de seguridad</Button></Header>
     <form className="settings-layout" onSubmit={submit}>
       <div className="stack">
+        <Section title="Protección de datos" className="settings-section"><label className="form-field">Bloqueo por inactividad (minutos)<input type="number" min={1} max={1440} required value={draft.autoLockMinutes} onChange={e => set("autoLockMinutes", Number(e.target.value))}/></label><p className="field-help">Si olvidás la contraseña maestra, no podrás recuperar los datos. Las copias de seguridad usan esa misma contraseña.</p></Section>
         <Section title="Consultora" className="settings-section"><Field label="Nombre de la consultora" name="organization" value={draft.organization} required onChange={value => set("organization", value)} /><p className="field-help">Este nombre se muestra en la navegación y en los informes.</p></Section>
         <Section title="Perfil" className="settings-section"><div className="form-grid"><Field label="Nombre completo" name="userName" value={draft.userName} required onChange={value => set("userName", value)} /><Field label="Correo electrónico" name="email" type="email" value={draft.email} required onChange={value => set("email", value)} /><SelectField label="Rol" name="role" options={["Responsable","Pentester","Revisor"]} value={draft.role} onChange={value => set("role", value)} /><SelectField label="Zona horaria" name="timezone" options={["America/Argentina/Buenos_Aires","America/Bogota","America/Santiago","America/Mexico_City","Europe/Madrid"]} value={draft.timezone} onChange={value => set("timezone", value)} /></div></Section>
         <Section title="Apariencia de informes" className="settings-section">
