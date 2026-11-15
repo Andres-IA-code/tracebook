@@ -24,3 +24,4 @@
 - Keep every package URL in `bun.lock` on the public registry https://registry.npmjs.org/ (fix with `node scripts/fix-lockfile.mjs`), so anyone can clone and run `bun install`.
 - Never rename the localStorage keys `vertice-workspace-data`, `vertice-settings`, `vertice-audit`; they are kept on purpose for compatibility with data already saved.
 - Encrypted backups use only Web Crypto (src/lib/backup-crypto.ts, versioned file format); never log or persist passwords, so backups stay safe and offline.
+- Finding technical fields are optional and normalized on load/import; evidence images are validated PNG/JPEG data URLs stored inside the existing workspace and backups, so legacy records remain compatible and attachments stay offline and portable.

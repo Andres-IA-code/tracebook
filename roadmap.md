@@ -22,4 +22,5 @@
 - [x] Add panel counters for projects in test, in review and delivered
 - [x] Use the uploaded Apollo binder photo as the bundled app logo (sidebar and mobile bar)
 - [x] Keep exported and printed reports light regardless of app appearance; verify both themes
+- [x] Extend finding fields, collapsible form, local image evidence, and reusable library templates; verify legacy compatibility and persistence
 
