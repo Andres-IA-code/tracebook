@@ -26,3 +26,5 @@
 - Encrypted backups use only Web Crypto (src/lib/backup-crypto.ts, versioned file format); never log or persist passwords, so backups stay safe and offline.
 - Finding technical fields are optional and normalized on load/import; evidence images are validated PNG/JPEG data URLs stored inside the existing workspace and backups, so legacy records remain compatible and attachments stay offline and portable.
 - CVSS base metrics use the bundled js-cvss 3.1 impact/exploitability engine with FIRST Appendix A rounding in a shared browser-safe module; CWE, score, and vector remain separate optional fields, and manual severity overrides persist without being recalculated on load.
+- Final reports are immutable local workspace snapshots (including findings, evidence, signed authorization and branding); only delivery status changes, so later edits never alter issued documents. Backups include reports, and the delivered-report metric counts report records, independently of project status.
+- Generate final report preview, PDF and true OOXML Word from shared document blocks in browser-safe modules; bundle export libraries locally and never contact external services.

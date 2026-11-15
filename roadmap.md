@@ -24,4 +24,5 @@
 - [x] Keep exported and printed reports light regardless of app appearance; verify both themes
 - [x] Extend finding fields, collapsible form, local image evidence, and reusable library templates; verify legacy compatibility and persistence
 - [x] Add offline CVSS 3.1 calculator, separate validated CWE/CVSS fields, automatic severity with manual override, and saved-vector restoration
+- [x] Generate and save technical/executive project reports with preview, signed scope, branding, PDF/Word and independent delivery status; verified downloads, evidence, selection and persistence
 

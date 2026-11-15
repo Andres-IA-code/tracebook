@@ -1,3 +1,5 @@
+import { FinalReports } from "@/components/final-reports";
+import { deliveredReportCount, type FinalReport } from "@/lib/reports";
 import { BRAND } from "@/brand";
 import tracebookLogo from "@/assets/tracebook-logo.png";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -23,7 +25,7 @@ type Project = { id: string; name: string; client: string; type: string; status:
 type Finding = FindingDetails & { id: string; title: string; severity: string; status: string; project: string; projectId?: string | undefined; description: string };
 type Client = { id: string; name: string; industry: string; contact: string; email: string };
 type Template = TechnicalDetails & { id: string; title: string; cwe: string; category: string; severity: string };
-type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; templates: Template[]; authorizations: Authorization[] };
+type DataState = { projects: Project[]; findings: Finding[]; clients: Client[]; templates: Template[]; authorizations: Authorization[]; reports: FinalReport[] };
 type SettingsState = {
   organization: string; userName: string; email: string; role: string; timezone: string;
   latexLogo: string; latexPrimaryColor: string; latexTextColor: string; latexSecondaryColor: string;
@@ -35,7 +37,7 @@ type PendingDelete = { group: string; heading: string; description: ReactNode; c
 const PROJECT_STATUSES = ["Preparación", "En prueba", "En revisión", "Entregado"];
 const PROJECT_STATUS_TONES: Record<string, string> = { "Preparación": "neutral", "En prueba": "info", "En revisión": "warning", "Entregado": "success" };
 const PROJECT_STATUS_ICONS: Record<string, typeof FolderOpen> = { "Preparación": FolderOpen, "En prueba": Play, "En revisión": Eye, "Entregado": Send };
-const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [] };
+const EMPTY_DATA: DataState = { projects: [], findings: [], clients: [], templates: [], authorizations: [], reports: [] };
 // Storage keys intentionally keep the legacy "vertice-*" names for compatibility:
 // renaming them would make the app lose data people already saved.
 const STORAGE_KEY = "vertice-workspace-data";
@@ -49,8 +51,8 @@ const DEFAULT_SETTINGS: SettingsState = {
 type AuditEntry = { id: string; at: string; user: string; action: "Importación" | "Exportación" | "Eliminación" | "Actualización"; detail: string };
 const AUDIT_KEY = "vertice-audit";
 function normalizeData(parsed: Partial<DataState>): DataState {
-  const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [] };
-  if (![next.projects, next.findings, next.clients, next.templates, next.authorizations].every(Array.isArray)) throw new Error("formato");
+  const next = { projects: parsed.projects ?? [], findings: parsed.findings ?? [], clients: parsed.clients ?? [], templates: parsed.templates ?? [], authorizations: parsed.authorizations ?? [], reports: parsed.reports ?? [] };
+  if (![next.projects, next.findings, next.clients, next.templates, next.authorizations, next.reports].every(Array.isArray)) throw new Error("formato");
   next.findings = next.findings.map(original => {
     const f = { ...original, ...normalizeFindingDetails(original) };
     if (f.projectId) { const p = next.projects.find(x => x.id === f.projectId); return p ? { ...f, project: p.name } : f; }
@@ -66,7 +68,7 @@ function parseBackup(text: string): ImportPayload {
   try { raw = JSON.parse(text); } catch { throw new Error("El archivo no es un JSON válido."); }
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("El archivo no tiene el formato de un respaldo de Tracebook.");
   const obj = raw as Record<string, unknown>;
-  const keys = ["projects", "findings", "clients", "templates", "authorizations"];
+  const keys = ["projects", "findings", "clients", "templates", "authorizations", "reports"];
   if (!keys.some(k => k in obj)) throw new Error("El archivo no contiene proyectos, hallazgos, clientes, plantillas ni autorizaciones.");
   for (const k of keys) if (k in obj && !Array.isArray(obj[k])) throw new Error(`El campo "${k}" no tiene un formato válido.`);
   for (const k of keys) for (const item of (obj[k] as unknown[] | undefined) ?? []) if (!item || typeof item !== "object" || typeof (item as { id?: unknown }).id !== "string") throw new Error(`Hay registros sin identificador en "${k}".`);
@@ -157,7 +159,7 @@ export function WorkspaceApp() {
   const importInput = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<{ payload: ImportPayload; name: string; confirmReplace: boolean } | null>(null);
   const [importError, setImportError] = useState("");
-  const countOf = (d: DataState) => `${d.projects.length} proyectos, ${d.findings.length} hallazgos, ${d.authorizations.length} autorizaciones, ${d.clients.length} clientes, ${d.templates.length} plantillas`;
+  const countOf = (d: DataState) => `${d.reports.length} informes, ${d.projects.length} proyectos, ${d.findings.length} hallazgos, ${d.authorizations.length} autorizaciones, ${d.clients.length} clientes, ${d.templates.length} plantillas`;
   const startImport = () => { if (importInput.current) { importInput.current.value = ""; importInput.current.click(); } };
   const onImportFile = async (file?: File) => {
     if (!file) return;
@@ -170,7 +172,7 @@ export function WorkspaceApp() {
   };
   const continueImport = (payload: ImportPayload, name: string) => {
     {
-      const hasData = [data.projects, data.findings, data.clients, data.templates, data.authorizations ?? []].some(a => a.length > 0);
+      const hasData = [data.projects, data.findings, data.clients, data.templates, data.authorizations ?? [], data.reports].some(a => a.length > 0);
       if (hasData) setPendingImport({ payload, name, confirmReplace: false });
       else applyImport(payload, "replace", name);
     }
@@ -193,7 +195,7 @@ export function WorkspaceApp() {
       confirm("Datos importados");
     } else {
       const cur = { ...data, authorizations: data.authorizations ?? [] };
-      const merged = normalizeData({ projects: mergeById(cur.projects, payload.data.projects), findings: mergeById(cur.findings, payload.data.findings), clients: mergeById(cur.clients, payload.data.clients), templates: mergeById(cur.templates, payload.data.templates), authorizations: mergeById(cur.authorizations, payload.data.authorizations) });
+      const merged = normalizeData({ projects: mergeById(cur.projects, payload.data.projects), findings: mergeById(cur.findings, payload.data.findings), clients: mergeById(cur.clients, payload.data.clients), templates: mergeById(cur.templates, payload.data.templates), authorizations: mergeById(cur.authorizations, payload.data.authorizations), reports: mergeById(cur.reports, payload.data.reports) });
       const added = { projects: merged.projects.length - cur.projects.length, findings: merged.findings.length - cur.findings.length, authorizations: merged.authorizations.length - cur.authorizations.length, clients: merged.clients.length - cur.clients.length, templates: merged.templates.length - cur.templates.length };
       updateData(merged);
       log("Importación", `Combinación desde ${name}: se agregaron ${added.projects} proyectos, ${added.findings} hallazgos, ${added.authorizations} autorizaciones, ${added.clients} clientes, ${added.templates} plantillas`);
@@ -312,7 +314,7 @@ export function WorkspaceApp() {
   const activeProjects = data.projects.filter(project => project.status !== "Entregado").length;
   const openFindings = data.findings.filter(finding => finding.status !== "Cerrado").length;
   const critical = data.findings.filter(finding => canonicalSeverity(finding.severity) === "Crítica" && finding.status !== "Cerrado").length;
-  const deliveredReports = data.projects.filter(project => project.status === "Entregado").length;
+  const deliveredReports = deliveredReportCount(data.reports);
   const statusCounts = PROJECT_STATUSES.map(status => data.projects.filter(project => project.status === status).length);
   return <div className="app-shell">
     <aside className={cn("sidebar", mobileNav && "sidebar-open")}>
@@ -329,7 +331,7 @@ export function WorkspaceApp() {
         {view === "autorizaciones" && <Authorizations items={data.authorizations ?? []} projects={data.projects} onChange={authorizations => { (data.authorizations ?? []).filter(a => !authorizations.some(x => x.id === a.id)).forEach(a => log("Eliminación", `Autorización de "${a.projectName}" (${a.client})`)); updateData({ ...data, authorizations }); }} goProjects={() => go("proyectos")} notify={confirm} />}
         {view === "hallazgos" && <Findings findings={data.findings} create={() => setCreateKind("finding")} onEdit={setEditingFinding} onDelete={deleteFinding} />}
         {view === "biblioteca" && <Library templates={data.templates} create={() => setCreateKind("template")} onDelete={id => { const t = data.templates.find(x => x.id === id); if (!t) return; setPendingDelete({ group: "Biblioteca de hallazgos", heading: "Eliminar plantilla", description: <>Se eliminará la plantilla <b>{t.title}</b> del catálogo reutilizable.</>, confirmLabel: "Eliminar", run: () => { updateData({ ...data, templates: data.templates.filter(x => x.id !== id) }); log("Eliminación", `Plantilla "${t.title}"`); confirm("Plantilla eliminada"); } }); }} />}
-        {view === "informes" && <Reports projects={data.projects} findings={data.findings} settings={settings} onStatus={setProjectStatus} />}
+        {view === "informes" && <><FinalReports projects={data.projects} findings={data.findings} authorizations={data.authorizations} reports={data.reports} settings={settings} onSave={report => { updateData({ ...data, reports: [...data.reports, report] }); log("Actualización", `Informe de "${report.project.name}" generado (${report.type}, v${report.version})`); confirm("Informe guardado"); }} onStatus={(id, status) => { try { updateData({ ...data, reports: data.reports.map(r => r.id === id ? { ...r, status } : r) }); log("Actualización", `Informe ${id}: ${status}`); confirm("Estado del informe actualizado"); } catch { confirm("No se pudo guardar el estado del informe"); } }} onExport={(report, format) => log("Exportación", `Informe ${report.id} (${format})`)} /><Reports projects={data.projects} findings={data.findings} settings={settings} onStatus={setProjectStatus} /></>}
         {view === "clientes" && <Clients clients={data.clients} projects={data.projects} create={() => setCreateKind("client")} onDelete={deleteClient} onUpdate={updateClient} />}
         {view === "configuracion" && <SettingsPage settings={settings} onSave={updateSettings} exportData={doExport} importData={startImport} audit={audit} onDeleteAudit={deleteAuditEntry} onClearAudit={clearAudit} onResetSettings={resetSettings} />}
       </main>
@@ -629,11 +631,11 @@ function buildLatexPreviewHtml(project: Project, list: Finding[], settings: Sett
 </body></html>`;
 }
 
-function Reports({ projects, findings, settings, onStatus }: { projects: Project[]; findings: Finding[]; settings: SettingsState; onStatus: (id: string, status: string) => void }) {
+function Reports({ projects, findings, settings }: { projects: Project[]; findings: Finding[]; settings: SettingsState; onStatus: (id: string, status: string) => void }) {
   const [formats, setFormats] = useState<Record<string, ReportFormat>>({});
   const [preview, setPreview] = useState<Project | null>(null);
   const previewList = preview ? findings.filter(f => inProject(f, preview)) : [];
-  return <><Header title="Informes" sub="Genera informes a partir de datos cargados" />{(() => { const loose = findings.filter(f => !projects.some(p => inProject(f, p))).length; return loose ? <Section><p className="form-error">{loose === 1 ? "Hay 1 hallazgo sin proyecto asignado" : `Hay ${loose} hallazgos sin proyecto asignado`}: no aparece en ningún informe. Editalo en Hallazgos y elegí su proyecto.</p></Section> : null; })()}{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>inProject(f, project)).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label={`Estado del informe de ${project.name}`} className="report-format" value={project.status === "Entregado" ? "Entregado" : "En preparación"} onChange={e => onStatus(project.id, e.target.value === "Entregado" ? "Entregado" : "Preparación")}><option value="En preparación">En preparación</option><option value="Entregado">Entregado</option></select><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select>{fmt === "latex" ? <Button size="sm" variant="outline" disabled={!total} onClick={() => setPreview(project)}><Eye/>Vista previa</Button> : null}<Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div><p className="report-note"><small>Los informes se guardan sin cifrar. Para enviarlos, comprimilos en un .zip o .7z con cifrado AES-256 y compartí la contraseña por otro medio.</small></p></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}
+  return <><div className="section-head"><h2>Exportaciones adicionales</h2></div>{(() => { const loose = findings.filter(f => !projects.some(p => inProject(f, p))).length; return loose ? <Section><p className="form-error">{loose === 1 ? "Hay 1 hallazgo sin proyecto asignado" : `Hay ${loose} hallazgos sin proyecto asignado`}: no aparece en ningún informe. Editalo en Hallazgos y elegí su proyecto.</p></Section> : null; })()}{projects.length ? <Section title="Proyectos disponibles"><div className="simple-records">{projects.map(project => { const total=findings.filter(f=>inProject(f, project)).length; const fmt = formats[project.id] ?? "latex"; return <div key={project.id}><span><b>{project.name}</b><small>{project.client}</small></span><span>{total} hallazgos</span><span style={{display:"flex",gap:8,alignItems:"center"}}><select aria-label="Formato del informe" className="report-format" value={fmt} onChange={e => setFormats({ ...formats, [project.id]: e.target.value as ReportFormat })}><option value="latex">LaTeX</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="html">HTML</option><option value="json">JSON</option></select>{fmt === "latex" ? <Button size="sm" variant="outline" disabled={!total} onClick={() => setPreview(project)}><Eye/>Vista previa</Button> : null}<Button size="sm" disabled={!total} onClick={() => generateReport(project, findings, fmt, settings)}><FileText/>Generar</Button></span></div>;})}</div><p className="report-note"><small>Los informes se guardan sin cifrar. Para enviarlos, comprimilos en un .zip o .7z con cifrado AES-256 y compartí la contraseña por otro medio.</small></p></Section> : <Section><EmptyState icon={FileText} title="No hay informes para generar" text="Primero carga un proyecto y sus hallazgos reales." /></Section>}
   {preview ? <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setPreview(null); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="latex-preview-title" style={{ width: "min(860px, 96vw)", maxWidth: "none" }}>
     <div className="modal-head"><div><small>Vista previa LaTeX</small><h2 id="latex-preview-title">{preview.name}</h2></div><Button variant="ghost" size="icon" aria-label="Cerrar" onClick={() => setPreview(null)}><X/></Button></div>
     <iframe title="Vista previa del informe LaTeX" srcDoc={buildLatexPreviewHtml(preview, previewList, settings)} style={{ width: "100%", height: "65vh", border: 0, display: "block" }} />
@@ -687,8 +689,8 @@ function SettingsPage({ settings, onSave, exportData, importData, audit, onDelet
       <div className="stack">
         <Section title="Consultora" className="settings-section"><Field label="Nombre de la consultora" name="organization" value={draft.organization} required onChange={value => set("organization", value)} /><p className="field-help">Este nombre se muestra en la navegación y en los informes.</p></Section>
         <Section title="Perfil" className="settings-section"><div className="form-grid"><Field label="Nombre completo" name="userName" value={draft.userName} required onChange={value => set("userName", value)} /><Field label="Correo electrónico" name="email" type="email" value={draft.email} required onChange={value => set("email", value)} /><SelectField label="Rol" name="role" options={["Responsable","Pentester","Revisor"]} value={draft.role} onChange={value => set("role", value)} /><SelectField label="Zona horaria" name="timezone" options={["America/Argentina/Buenos_Aires","America/Bogota","America/Santiago","America/Mexico_City","Europe/Madrid"]} value={draft.timezone} onChange={value => set("timezone", value)} /></div></Section>
-        <Section title="Plantilla LaTeX" className="settings-section">
-          <div className="latex-logo-row"><div className="latex-logo-preview">{draft.latexLogo ? <img src={draft.latexLogo} alt="Logotipo del equipo" /> : <span className="brand-mark" />}</div><div><b>Logotipo del equipo</b><small>PNG o JPG, hasta 1 MB. Se incluirá dentro del archivo .tex.</small><div className="latex-logo-actions"><input ref={logoRef} hidden type="file" accept="image/png,image/jpeg" onChange={event => { loadLogo(event.target.files?.[0]); event.target.value = ""; }} /><Button type="button" variant="outline" size="sm" onClick={() => logoRef.current?.click()}><Upload />{draft.latexLogo ? "Cambiar" : "Cargar"}</Button>{draft.latexLogo ? <Button type="button" variant="ghost" size="sm" onClick={() => set("latexLogo", "")}><Trash2 />Quitar</Button> : null}</div></div></div>
+        <Section title="Apariencia de informes" className="settings-section">
+          <div className="latex-logo-row"><div className="latex-logo-preview">{draft.latexLogo ? <img src={draft.latexLogo} alt="Logotipo del equipo" /> : <span className="brand-mark" />}</div><div><b>Logotipo del equipo</b><small>PNG o JPG, hasta 1 MB. Se incluye en PDF, Word y LaTeX.</small><div className="latex-logo-actions"><input ref={logoRef} hidden type="file" accept="image/png,image/jpeg" onChange={event => { loadLogo(event.target.files?.[0]); event.target.value = ""; }} /><Button type="button" variant="outline" size="sm" onClick={() => logoRef.current?.click()}><Upload />{draft.latexLogo ? "Cambiar" : "Cargar"}</Button>{draft.latexLogo ? <Button type="button" variant="ghost" size="sm" onClick={() => set("latexLogo", "")}><Trash2 />Quitar</Button> : null}</div></div></div>
           <div className="latex-color-grid"><ColorField label="Color principal" value={draft.latexPrimaryColor} onChange={value => set("latexPrimaryColor", value)} /><ColorField label="Color de texto" value={draft.latexTextColor} onChange={value => set("latexTextColor", value)} /><ColorField label="Color secundario" value={draft.latexSecondaryColor} onChange={value => set("latexSecondaryColor", value)} /></div>
           <div className="form-grid latex-contact-grid"><Field label="Teléfono del equipo" name="teamPhone" type="tel" value={draft.teamPhone} onChange={value => set("teamPhone", value)} /><Field label="Sitio web" name="teamWebsite" type="url" placeholder="https://" value={draft.teamWebsite} onChange={value => set("teamWebsite", value)} /><Field label="Dirección" name="teamAddress" value={draft.teamAddress} onChange={value => set("teamAddress", value)} /></div>
           <p className="field-help">Los campos vacíos no aparecerán en el informe. Con un logotipo personalizado, compila el archivo con LuaLaTeX.</p>
